@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="horizontal"
+    tools:context=".Activity.StreamingActivity">
+
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:background="@android:color/black">
+
+        <FrameLayout
+            android:id="@+id/video_layout"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <me.lake.librestreaming.sample.ui.AspectTextureView
+                android:id="@+id/txv_preview"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
+        </FrameLayout>
+
+        <FrameLayout
+            android:background="#55000000"
+            android:id="@+id/ready_layout"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <RelativeLayout
+                android:padding="8dp"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+                <ImageView
+                    android:layout_width="100dp"
+                    android:layout_height="100dp"
+                    android:padding="20dp"
+                    android:background="@drawable/round_background"
+                    app:srcCompat="@drawable/ic_photo_camera"
+                    android:id="@+id/stream_img"
+                    tools:layout_editor_absoluteY="276dp"
+                    tools:layout_editor_absoluteX="203dp"
+                    android:layout_marginTop="112dp"
+                    android:layout_centerHorizontal="true" />
+
+                <EditText
+                    android:textColor="#FFFFFF"
+                    android:textColorHint="#FFFFFF"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:inputType="textPersonName"
+                    android:gravity="center"
+                    android:ems="10"
+                    android:layout_centerVertical="true"
+                    android:layout_centerHorizontal="true"
+                    android:id="@+id/stream_title"
+                    android:hint="방송 제목" />
+
+                <Button
+                    android:text="Live On"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@+id/stream_title"
+                    android:layout_centerHorizontal="true"
+                    android:layout_marginTop="50dp"
+                    android:id="@+id/live_btn" />
+
+            </RelativeLayout>
+
+        </FrameLayout>
+
+        <FrameLayout
+            android:padding="10dp"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <TextView
+                android:layout_gravity="center_horizontal"
+                style="@style/Watching_Text_style"
+                android:text="방송 제목"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/broadcast_name"
+                android:visibility="gone"/>
+
+            <ImageView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:srcCompat="@drawable/ic_cancel_music"
+                android:id="@+id/cancel_btn"
+                tools:layout_editor_absoluteY="173dp"
+                tools:layout_editor_absoluteX="40dp" />
+
+            <ImageView
+                android:id="@+id/switch_btn"
+                android:layout_gravity="right|top"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:srcCompat="@drawable/ic_refresh_button"
+                android:layout_alignParentRight="true"
+                android:layout_alignParentEnd="true" />
+
+        </FrameLayout>
+
+    </FrameLayout>
+
+</LinearLayout>

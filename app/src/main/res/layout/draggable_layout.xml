@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:draggable_view="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#FFf1f1f1">
+
+
+    <android.support.v7.widget.RecyclerView
+        android:id="@+id/stream_lv"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <ImageView
+        android:id="@+id/iv_poster"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        draggable_view:srcCompat="@mipmap/cat" />
+
+    <com.github.pedrovgs.DraggableView
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:draggable_view="http://schemas.android.com/apk/res-auto"
+        android:id="@+id/draggable_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#000000"
+        draggable_view:enable_click_to_maximize_view="false"
+        draggable_view:enable_click_to_minimize_view="true"
+        draggable_view:top_view_id="@+id/player_view"
+        draggable_view:bottom_view_id="@+id/iv_thumbnail"
+        draggable_view:top_view_margin_bottom="10dip"
+        draggable_view:top_view_margin_right="10dip"
+        draggable_view:top_view_x_scale_factor="2.3"
+        draggable_view:top_view_y_scale_factor="2.3">
+
+        <!-- ....... -->
+
+        <com.google.android.exoplayer2.ui.SimpleExoPlayerView
+            android:id="@+id/player_view"
+            android:focusable="true"
+            android:layout_width="match_parent"
+            android:layout_height="300dp"
+            android:background="#000000"/>
+
+        <!--<FrameLayout-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="300dp">-->
+
+        <!--&lt;!&ndash;<RelativeLayout&ndash;&gt;-->
+        <!--&lt;!&ndash;android:layout_width="match_parent"&ndash;&gt;-->
+        <!--&lt;!&ndash;android:layout_height="match_parent"&ndash;&gt;-->
+        <!--&lt;!&ndash;android:id="@+id/conrtoller">&ndash;&gt;-->
+
+        <!--&lt;!&ndash;<TextView&ndash;&gt;-->
+        <!--&lt;!&ndash;android:layout_margin="10dp"&ndash;&gt;-->
+        <!--&lt;!&ndash;style="@style/Watching_Text_style"&ndash;&gt;-->
+        <!--&lt;!&ndash;android:text="방송 제목"&ndash;&gt;-->
+        <!--&lt;!&ndash;android:layout_width="wrap_content"&ndash;&gt;-->
+        <!--&lt;!&ndash;android:layout_height="wrap_content"&ndash;&gt;-->
+        <!--&lt;!&ndash;android:id="@+id/broad_name" />&ndash;&gt;-->
+
+        <!--&lt;!&ndash;<ImageView&ndash;&gt;-->
+        <!--&lt;!&ndash;android:layout_margin="10dp"&ndash;&gt;-->
+        <!--&lt;!&ndash;android:layout_gravity="end|bottom"&ndash;&gt;-->
+        <!--&lt;!&ndash;android:layout_width="wrap_content"&ndash;&gt;-->
+        <!--&lt;!&ndash;android:layout_height="wrap_content"&ndash;&gt;-->
+        <!--&lt;!&ndash;draggable_view:srcCompat="@drawable/ic_full_screen"&ndash;&gt;-->
+        <!--&lt;!&ndash;android:id="@+id/full_screen_btn"&ndash;&gt;-->
+        <!--&lt;!&ndash;android:layout_alignParentBottom="true"&ndash;&gt;-->
+        <!--&lt;!&ndash;android:layout_alignParentRight="true"&ndash;&gt;-->
+        <!--&lt;!&ndash;android:layout_alignParentEnd="true" />&ndash;&gt;-->
+
+        <!--&lt;!&ndash;<ImageView&ndash;&gt;-->
+        <!--&lt;!&ndash;android:layout_gravity="right"&ndash;&gt;-->
+        <!--&lt;!&ndash;android:layout_width="wrap_content"&ndash;&gt;-->
+        <!--&lt;!&ndash;android:layout_height="wrap_content"&ndash;&gt;-->
+        <!--&lt;!&ndash;draggable_view:srcCompat="@drawable/ic_more"&ndash;&gt;-->
+        <!--&lt;!&ndash;android:id="@+id/more_btn2"&ndash;&gt;-->
+        <!--&lt;!&ndash;android:layout_alignTop="@+id/broad_name"&ndash;&gt;-->
+        <!--&lt;!&ndash;android:layout_alignLeft="@+id/full_screen_btn"&ndash;&gt;-->
+        <!--&lt;!&ndash;android:layout_alignStart="@+id/full_screen_btn" />&ndash;&gt;-->
+        <!--&lt;!&ndash;</RelativeLayout>&ndash;&gt;-->
+
+        <!--</FrameLayout>-->
+
+        <ImageView
+            android:layout_width="match_parent"
+            android:layout_height="100dp"
+            draggable_view:srcCompat="@mipmap/ic_launcher"
+            android:id="@+id/iv_thumbnail"
+            android:layout_alignParentBottom="true" />
+    </com.github.pedrovgs.DraggableView>
+
+</RelativeLayout>
