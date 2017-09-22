@@ -6,6 +6,7 @@ package com.example.kimjungwon.livebusker.Config;
 
 public class URL {
     public static String Server_IP         = "52.78.246.168";
+    public static int    Chat_Port         = 8889;
     public static String RTMP_Addr         = "rtmp://" + Server_IP + "/live/";
     public static String HLS_Addr          = "http://" + Server_IP + "/hls/";
     public static String DASH_Addr         = "http://" + Server_IP + "/dash/";

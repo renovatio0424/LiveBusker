@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     package="com.example.kimjungwon.livebusker">
 
     <application
@@ -8,7 +9,8 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/AppTheme">
+        android:theme="@style/AppTheme"
+        tools:replace="android:label">
         <activity
             android:name=".Activity.MainActivity"
             android:label="@string/app_name">
@@ -18,10 +20,15 @@
             </intent-filter>
         </activity>
         <activity android:name=".Activity.StreamingActivity"
-            android:theme="@style/FullScreen"/>
+            android:theme="@style/FullScreen"
+            android:screenOrientation="landscape"/>
+        <activity android:name=".Activity.StreamingActivity_land"
+            android:theme="@style/FullScreen"
+            android:screenOrientation="landscape"/>
         <activity android:name=".Fragment.WatchingFragment"/>
         <!--<activity android:name=".Fragment.StreamFragment"/>-->
         <activity android:name=".Activity.WatchingActivity"/>
+
     </application>
 
 </manifest>

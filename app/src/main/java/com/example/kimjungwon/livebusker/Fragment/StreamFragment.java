@@ -15,6 +15,7 @@ import android.view.ViewGroup;
 
 import com.example.kimjungwon.livebusker.Adapter.Stream_Adapter;
 import com.example.kimjungwon.livebusker.Data.Stream;
+import com.example.kimjungwon.livebusker.Netty.ChatInitializer;
 import com.example.kimjungwon.livebusker.Network.PHPRequest;
 import com.example.kimjungwon.livebusker.R;
 
@@ -25,7 +26,19 @@ import org.json.JSONObject;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 
+import io.netty.bootstrap.Bootstrap;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
+import io.netty.channel.ChannelOption;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.nio.NioSocketChannel;
+
+import static com.example.kimjungwon.livebusker.Config.URL.Chat_Port;
 import static com.example.kimjungwon.livebusker.Config.URL.LiveStream_Addr;
+import static com.example.kimjungwon.livebusker.Config.URL.Server_IP;
 
 /**
  * Created by kimjungwon on 2017-09-07.
@@ -41,34 +54,79 @@ public class StreamFragment extends Fragment implements SwipeRefreshLayout.OnRef
 
     SwipeRefreshLayout swipeRefreshLayout;
 
+    String string_postgre,string_chatserver;
+
+    NioEventLoopGroup group;
+    Channel channel;
+    ChannelFuture channelFuture;
+
     Handler handler = new Handler(){
         @Override
         public void handleMessage(Message msg) {
             super.handleMessage(msg);
-            Bundle bun = msg.getData();
-            String jsonString = bun.getString("StreamJson");
-            JSONArray ja = null;
-            try {
-                ja = new JSONArray(jsonString);
-                for(int i = 0 ; i < ja.length() ; i ++){
-                    JSONObject jo = ja.getJSONObject(i);
-                    int id = jo.getInt("id");
-                    String title = jo.getString("title");
-                    String stream_key = jo.getString("stream_key");
-                    Stream st = new Stream(id,title,stream_key);
-//                        Log.d(TAG,"id: " + id + "\ntitle: " + title);
-                    StreamList.add(st);
-                }
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
+            switch (msg.what){
+                case 0x00:
+                    JSONObject MessageOb = new JSONObject();
+                    try {
+                        MessageOb.put("Type","4");
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                    String m = MessageOb.toString();
+                    ByteBuf msgbuf = Unpooled.buffer();
+                    msgbuf.writeBytes(m.getBytes());
+                    channel.writeAndFlush(msgbuf.retain());
+                    break;
+//                채팅방 목록에 추가
+                case 0x01:
+//                    postgres
+//                    try {
+//                        JSONArray ja = new JSONArray(string_postgre);
+//                        for(int i = 0 ; i < ja.length() ; i ++){
+//                            JSONObject jo = ja.getJSONObject(i);
+//                            int id = jo.getInt("id");
+//                            String title = jo.getString("title");
+//                            String stream_key = jo.getString("stream_key");
+//                            Stream st = new Stream(id,title,stream_key);
+////                        Log.d(TAG,"id: " + id + "\ntitle: " + title);
+//                            StreamList.add(st);
+//                        }
+//                    } catch (JSONException e) {
+//                        e.printStackTrace();
+//                    }
+//                    chatserver
+                    try {
+                        JSONArray RoomArray = new JSONArray(msg.obj + "");
+                        Log.d(TAG,"room list: " + msg.obj + "");
+                        if(RoomArray.length() != 0){
+                            for(int i = 0 ; i < RoomArray.length() ; i ++){
+                                JSONObject Room = RoomArray.getJSONObject(i);
+                                String title = Room.getString("Roomname");
+                                String streamkey = Room.getString("Streamkey");
+                                Log.d(TAG,"room name: " + title);
+                                Log.d(TAG,"room streamkey: " + streamkey);
+                                int usernum = Room.getInt("UserNum");
 
-            sa = new Stream_Adapter(StreamList,getContext());
-            Log.d(TAG,"create stream adapter");
-            StreamListView.setAdapter(sa);
-            sa.notifyDataSetChanged();
-            Log.d(TAG,"set stream adapter");
-            Log.d(TAG,"setStreamList size: " + StreamList.size());
+                                Stream stream = new Stream(0,title,streamkey);
+                                StreamList.add(stream);
+                            }
+                        }
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+
+                    sa = new Stream_Adapter(StreamList,getContext());
+                    Log.d(TAG,"create stream adapter");
+                    StreamListView.setAdapter(sa);
+                    sa.notifyDataSetChanged();
+                    Log.d(TAG,"set stream adapter");
+                    Log.d(TAG,"setStreamList size: " + StreamList.size());
+                    break;
+//                채팅방 목록 요청
+                case 0x04:
+
+                    break;
+            }
         }
     };
 
@@ -81,13 +139,14 @@ public class StreamFragment extends Fragment implements SwipeRefreshLayout.OnRef
                     PHPRequest request = new PHPRequest(LiveStream_Addr);
                     JSONObject jsonObject = new JSONObject();
                     jsonObject.put("type",request.Select_stream);
-                    String after = request.POSTJSON(jsonObject.toString());
+                    string_postgre = request.POSTJSON(jsonObject.toString());
+
 //                    Log.d(TAG,"stream list: " + after);
-                    Bundle bun = new Bundle();
-                    bun.putString("StreamJson",after);
-                    Message msg = handler.obtainMessage();
-                    msg.setData(bun);
-                    handler.sendMessage(msg);
+//                    Bundle bun = new Bundle();
+//                    bun.putString("StreamJson",after);
+//                    Message msg = handler.obtainMessage();
+//                    msg.setData(bun);
+//                    handler.sendMessage(msg);
 
                 } catch (MalformedURLException e) {
                     e.printStackTrace();
@@ -96,6 +155,44 @@ public class StreamFragment extends Fragment implements SwipeRefreshLayout.OnRef
                 }
             }
         }).start();
+    }
+
+    void connect(final Handler handler) {
+        new Thread() {
+            @Override
+            public void run() {
+                try {
+                    Log.d("Main","connect start");
+                    group = new NioEventLoopGroup();
+
+                    Bootstrap bootstrap = new Bootstrap();
+                    bootstrap.group(group);
+                    bootstrap.channel(NioSocketChannel.class);
+                    bootstrap.handler(new ChatInitializer(handler));
+                    bootstrap.option(ChannelOption.SO_KEEPALIVE, true);
+                    bootstrap.option(ChannelOption.TCP_NODELAY, true);
+                    Log.d("Main","bootstrap set option");
+
+//                    channelFuture = bootstrap.connect(new InetSocketAddress(host, port));
+                    channelFuture = bootstrap.connect(Server_IP,Chat_Port);
+                    Log.d("Main","bootstrap connect");
+                    channel = channelFuture.sync().channel();
+                    channelFuture.addListener(new ChannelFutureListener() {
+                        @Override
+                        public void operationComplete(ChannelFuture channelFuture) throws Exception {
+                            //start 메시지 보내기
+                            handler.obtainMessage(0x00).sendToTarget();
+                        }
+                    });
+
+                    Log.d("Main","add Listner");
+                    channel.closeFuture().sync();
+                    Log.d("Main","channel.closeFuture().sync()");
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }.start();
     }
 
     @Nullable
@@ -138,6 +235,8 @@ public class StreamFragment extends Fragment implements SwipeRefreshLayout.OnRef
         StreamListView = (RecyclerView) Rootview.findViewById(R.id.stream_lv);
         StreamList = new ArrayList<>();
         setStreamList();
+        connect(handler);
+
 
         Log.d(TAG,"list size : " + StreamList.size());
         for(int i = 0 ; i < StreamList.size() ; i++){
@@ -153,8 +252,15 @@ public class StreamFragment extends Fragment implements SwipeRefreshLayout.OnRef
     }
 
     @Override
+    public void onDestroy() {
+        super.onDestroy();
+//        채팅 서버 접속 종료
+        group.shutdownGracefully();
+    }
+
+    @Override
     public void onRefresh() {
-        setStreamList();
+        handler.obtainMessage(0x00);
         swipeRefreshLayout.setRefreshing(false);
     }
 }
