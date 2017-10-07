@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="bitrate">
+        <item>고화질</item>
+        <item>중화질</item>
+        <item>저화질</item>
+    </string-array>
+</resources>

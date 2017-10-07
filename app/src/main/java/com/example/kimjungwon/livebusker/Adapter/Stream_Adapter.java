@@ -12,6 +12,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.example.kimjungwon.livebusker.Activity.WatchingActivity;
@@ -19,6 +20,8 @@ import com.example.kimjungwon.livebusker.Data.Stream;
 import com.example.kimjungwon.livebusker.R;
 
 import java.util.ArrayList;
+
+import static com.example.kimjungwon.livebusker.Config.URL.Thumbnail_Addr;
 
 /**
  * Created by kimjungwon on 2017-09-07.
@@ -37,27 +40,27 @@ public class Stream_Adapter extends RecyclerView.Adapter<Stream_Adapter.mViewHol
 
     @Override
     public mViewHolder onCreateViewHolder(final ViewGroup parent, final int position) {
-        View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_stream,null);
-        final int Position = position;
-        v.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Intent intent = new Intent(context, WatchingActivity.class);
-                intent.putExtra("stream_key",streams.get(position).getStream_key());
-                Log.d(TAG,"title" + streams.get(position).getStream_key());
-                context.startActivity(intent);
-            }
-        });
+        View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_stream, null);
         Log.d(TAG,"viewholder inflate!");
         return new mViewHolder(v);
     }
 
     @Override
-    public void onBindViewHolder(mViewHolder holder, int position) {
+    public void onBindViewHolder(mViewHolder holder, final int position) {
         Log.d(TAG,"onbindviewHolder");
         Stream stream = (Stream) streams.get(position);
-
-//        Glide.with(context).load().into(holder.ThumnailIV);
+        holder.itemView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(context, WatchingActivity.class);
+                intent.putExtra("Streamkey",streams.get(position).getStream_key());
+                intent.putExtra("Roomname",streams.get(position).getTitle());
+//                Toast.makeText(context, "item position: " + position, Toast.LENGTH_SHORT).show();
+                Log.d(TAG,"title" + streams.get(position).getStream_key());
+                context.startActivity(intent);
+            }
+        });
+        Glide.with(context).load(Thumbnail_Addr + stream.getStream_key() + ".jpg").into(holder.ThumnailIV);
         holder.TitleTV.setText(stream.getTitle());
     }
 
@@ -65,6 +68,7 @@ public class Stream_Adapter extends RecyclerView.Adapter<Stream_Adapter.mViewHol
     public int getItemCount() {
         return streams.size();
     }
+
 
     public class mViewHolder extends RecyclerView.ViewHolder {
         ImageView ThumnailIV,ProfileIV;

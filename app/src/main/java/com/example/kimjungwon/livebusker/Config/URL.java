@@ -11,4 +11,5 @@ public class URL {
     public static String HLS_Addr          = "http://" + Server_IP + "/hls/";
     public static String DASH_Addr         = "http://" + Server_IP + "/dash/";
     public static String LiveStream_Addr   = "http://" + Server_IP + "/LiveStreaming.php";
+    public static String Thumbnail_Addr    = "http://" + Server_IP + "/thumbnail/";
 }

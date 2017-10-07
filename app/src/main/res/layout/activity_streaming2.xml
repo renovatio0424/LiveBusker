@@ -19,6 +19,7 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent">
 
+
             <me.lake.librestreaming.sample.ui.AspectTextureView
                 android:id="@+id/txv_preview"
                 android:layout_width="match_parent"

@@ -3,6 +3,10 @@
     xmlns:tools="http://schemas.android.com/tools"
     package="com.example.kimjungwon.livebusker">
 
+    <meta-data
+        android:name="com.google.android.gms.vision.DEPENDENCIES"
+        android:value="face"/>
+
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"

@@ -1,1 +1,2 @@
 include ':app', ':librestreaming', ':sample', ':library'
+include ':openCVLibrary330'

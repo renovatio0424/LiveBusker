@@ -1,6 +1,7 @@
 package com.example.kimjungwon.livebusker.Activity;
 
 import android.content.ContentResolver;
+import android.media.Image;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -16,6 +17,8 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.FrameLayout;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -84,6 +87,7 @@ import static com.example.kimjungwon.livebusker.Config.URL.DASH_Addr;
 import static com.example.kimjungwon.livebusker.Config.URL.HLS_Addr;
 import static com.example.kimjungwon.livebusker.Config.URL.Server_IP;
 import static com.example.kimjungwon.livebusker.R.id.et_scroll;
+import static com.example.kimjungwon.livebusker.R.id.mcontroller;
 
 /**
  * Created by kimjungwon on 2017-09-06.
@@ -103,6 +107,9 @@ public class WatchingActivity extends AppCompatActivity implements VideoRenderer
     private static final DefaultBandwidthMeter BANDWIDTH_METER = new DefaultBandwidthMeter();
     private Handler mainHandler = new Handler();
     private EventLogger eventLogger;
+
+    FrameLayout controller;
+    ImageView more_btn;
     //채팅
     TextView view_chat;
     EditText et_msg;
@@ -111,7 +118,7 @@ public class WatchingActivity extends AppCompatActivity implements VideoRenderer
     NioEventLoopGroup group;
     Channel channel;
     ChannelFuture channelFuture;
-    String name;
+    String name,title;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -129,10 +136,14 @@ public class WatchingActivity extends AppCompatActivity implements VideoRenderer
             actionBar.hide();
         }
 
-        Stream_key = getIntent().getStringExtra("stream_key");
+        Stream_key = getIntent().getStringExtra("Streamkey");
+        title = getIntent().getStringExtra("Roomname");
+
+        Log.d(TAG,"stream key: " + Stream_key);
+
         path
 //                = HLS_Addr + Stream_key + ".m3u8";
-                = DASH_Addr+ Stream_key +"_dash.mpd";
+                = DASH_Addr+ Stream_key +"_dash_hi.mpd";
 
         Log.d(TAG,"path: " + path);
 
@@ -158,7 +169,69 @@ public class WatchingActivity extends AppCompatActivity implements VideoRenderer
 
 // Bind the player to the view.
         simpleExoPlayerView.setPlayer(player);
+//        simpleExoPlayerView.hideController();
 
+//        내 컨트롤러 달기
+//        controller = (FrameLayout) findViewById(R.id.mcontroller);
+//        simpleExoPlayerView.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View view) {
+//                if(controller.getVisibility() == View.VISIBLE){
+//                    controller.setVisibility(View.GONE);
+//                }else{
+//                    controller.setVisibility(View.VISIBLE);
+//                }
+//            }
+//        });
+        more_btn = (ImageView) findViewById(R.id.more_btn);
+        more_btn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                new MaterialDialog.Builder(WatchingActivity.this)
+                        .title("화질 변경")
+                        .items(R.array.bitrate)
+                        .itemsCallback(new MaterialDialog.ListCallback() {
+                            @Override
+                            public void onSelection(MaterialDialog dialog, View itemView, int position, CharSequence text) {
+                                path = DASH_Addr+ Stream_key + "_dash";
+                                switch (position){
+                                    case 0:
+                                        path += "_hi.mpd";
+                                        break;
+                                    case 1:
+                                        path += "_mid.mpd";
+                                        break;
+                                    case 2:
+                                        path += "_low.mpd";
+                                        break;
+                                }
+                                Log.d(TAG,"bitrate path : " + path);
+                            }
+                        })
+                        .positiveText("확인")
+                        .onPositive(new MaterialDialog.SingleButtonCallback() {
+                            @Override
+                            public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
+                                Uri mp4VideoUri = Uri.parse(path);
+                                DefaultBandwidthMeter bandwidthMeterA = new DefaultBandwidthMeter();
+                                DefaultDataSourceFactory dataSourceFactory = new DefaultDataSourceFactory(WatchingActivity.this, Util.getUserAgent(WatchingActivity.this, "exoplayer2example"), bandwidthMeterA);
+                                DashMediaSource dashMediaSource = new DashMediaSource(mp4VideoUri, dataSourceFactory,
+                                        new DefaultDashChunkSource.Factory(dataSourceFactory), null, null);
+                                final LoopingMediaSource loopingSource =
+                                        new LoopingMediaSource(dashMediaSource);
+                                player.prepare(loopingSource);
+                            }
+                        })
+                        .negativeText("취소")
+                        .onNegative(new MaterialDialog.SingleButtonCallback() {
+                            @Override
+                            public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
+                                dialog.dismiss();
+                            }
+                        })
+                        .show();
+            }
+        });
 
 
 // I. ADJUST HERE:
@@ -254,6 +327,8 @@ public class WatchingActivity extends AppCompatActivity implements VideoRenderer
 
 //        채팅 서버 접속
         view_chat = (TextView) findViewById(R.id.View_chat);
+        view_chat.setText("[" + title + "]에 입장하셨습니다\n");
+
         et_msg = (EditText) findViewById(R.id.et_msg);
         send_btn = (Button) findViewById(R.id.btn_send);
         send_btn.setOnClickListener(new View.OnClickListener() {

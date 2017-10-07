@@ -17,6 +17,10 @@ allprojects {
         maven{
             url 'https://maven.google.com'
         }
+//        face detection library (dlib)
+        maven{
+            url 'https://dl.bintray.com/tzutalin/maven'
+        }
     }
 }
 
