@@ -5,4 +5,11 @@
         <item>중화질</item>
         <item>저화질</item>
     </string-array>
+
+    <string-array name="mask">
+        <item>없음</item>
+        <item>토끼코 마스크</item>
+        <item>썬글라스 마스크</item>
+        <item>랜드마크 마스크</item>
+    </string-array>
 </resources>

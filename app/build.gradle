@@ -11,6 +11,7 @@ android {
         versionName "1.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
+        multiDexEnabled true
 
     }
     buildTypes {
@@ -35,34 +36,40 @@ dependencies {
         exclude module: 'recyclerview-v7'
         exclude module: 'appcompat-v7'
     })
+    //다이얼로그 라이브러리
+    //드래거블 패널
+    //glide
+    //exoplayer(dash)
+    compile project(path: ':librestreaming')
+    compile project(path: ':sample')
+    //okhttp
+    compile project(path: ':library')
+    //netty
+    compile files('libs/netty-all-4.0.36.Final.jar')
+    compile project(':openCVLibrary330')
+    //face detection library (dlib)
+    compile files('libs/com.skp.Tmap_1.0.48.jar')
     compile 'com.android.support:appcompat-v7:26.0.0-alpha1'
-    testCompile 'junit:junit:4.12'
     compile 'com.android.support:design:26.0.0-alpha1'
     compile 'com.android.support:support-vector-drawable:26.0.0'
-    //다이얼로그 라이브러리
     compile 'com.afollestad.material-dialogs:core:0.9.4.7'
-    //드래거블 패널
     compile 'com.github.pedrovgs:draggablepanel:1.9'
-    //glide
     compile 'com.github.bumptech.glide:glide:4.0.0'
-    annotationProcessor 'com.github.bumptech.glide:compiler:4.0.0'
-    //exoplayer(dash)
     compile 'com.google.android.exoplayer:exoplayer:r2.5.0'
     compile 'com.google.android.exoplayer:exoplayer-core:r2.5.0'
     compile 'com.google.android.exoplayer:exoplayer-dash:r2.5.0'
     compile 'com.google.android.exoplayer:exoplayer-hls:r2.5.0'
     compile 'com.google.android.exoplayer:exoplayer-ui:r2.5.0'
-    compile project(path: ':librestreaming')
-    compile project(path: ':sample')
-    //okhttp
     compile 'com.squareup.okhttp3:okhttp:3.9.0'
     compile 'com.android.support:support-v4:26.0.0-alpha1'
-    compile project(path: ':library')
-    //netty
-    compile files('libs/netty-all-4.0.36.Final.jar')
-    compile project(':openCVLibrary330')
-   //face detection library (dlib)
     compile 'com.tzutalin.dlib-android-app:dlib:1.0.4'
-
     compile 'com.google.android.gms:play-services-vision:9.8.0'
+    compile 'com.google.android.gms:play-services-maps:11.0.4'
+    testCompile 'junit:junit:4.12'
+    annotationProcessor 'com.github.bumptech.glide:compiler:4.0.0'
+
+    compile 'com.squareup.retrofit2:retrofit:2.3.0'
+    compile 'com.google.code.gson:gson:2.7'
+    compile 'com.squareup.retrofit2:converter-gson:2.1.0'
+    compile 'com.android.support:multidex:1.0.1'
 }

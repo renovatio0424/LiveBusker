@@ -96,6 +96,15 @@
                     android:layout_height="match_parent">
 
                     <ImageView
+                        android:id="@+id/mask_btn"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignTop="@+id/switch_btn"
+                        android:layout_toLeftOf="@+id/switch_btn"
+                        android:layout_toStartOf="@+id/switch_btn"
+                        app:srcCompat="@drawable/ic_laughing" />
+
+                    <ImageView
                         android:id="@+id/switch_btn"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"

@@ -86,8 +86,6 @@ import static com.example.kimjungwon.livebusker.Config.URL.Chat_Port;
 import static com.example.kimjungwon.livebusker.Config.URL.DASH_Addr;
 import static com.example.kimjungwon.livebusker.Config.URL.HLS_Addr;
 import static com.example.kimjungwon.livebusker.Config.URL.Server_IP;
-import static com.example.kimjungwon.livebusker.R.id.et_scroll;
-import static com.example.kimjungwon.livebusker.R.id.mcontroller;
 
 /**
  * Created by kimjungwon on 2017-09-06.

@@ -1,4 +1,4 @@
-package me.lake.librestreaming.sample.hardfilter;
+package com.example.kimjungwon.livebusker.CustomClass;
 
 import android.graphics.Bitmap;
 import android.graphics.Rect;
@@ -6,20 +6,17 @@ import android.graphics.RectF;
 import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
 import android.support.annotation.NonNull;
-import android.util.Log;
 
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 
 import me.lake.librestreaming.filter.hardvideofilter.BaseHardVideoFilter;
 import me.lake.librestreaming.tools.GLESTools;
 
 /**
- * Created by lake on 28/07/16.
- * Librestreaming project.
+ * Created by kimjungwon on 2017-10-14.
  */
-public class IconHardFilter extends BaseHardVideoFilter {
+
+public class MaskIconFilter extends BaseHardVideoFilter {
     protected int glProgram;
     protected int glCamTextureLoc;
     protected int glCamPostionLoc;
@@ -63,17 +60,17 @@ public class IconHardFilter extends BaseHardVideoFilter {
     protected RectF iconRectF;
     protected Rect iconRect;
 
-    public IconHardFilter(@NonNull Bitmap _bitmap, @NonNull Rect _rect) {
+    public MaskIconFilter(@NonNull Bitmap _bitmap, @NonNull Rect _rect) {
         iconBitmap = _bitmap;
         needUpdate = true;
         iconRectF = new RectF();
         iconRect = _rect;
     }
 
-    protected IconHardFilter() {
+    protected MaskIconFilter() {
         iconBitmap = null;
         needUpdate = false;
-        iconRectF = new RectF(0,0,0,0);
+        iconRectF = new RectF(0, 0, 0, 0);
     }
 
     public void updateIcon(Bitmap _bitmap, Rect _rect) {

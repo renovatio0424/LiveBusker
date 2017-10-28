@@ -19,7 +19,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.kimjungwon.livebusker.Fragment.FavoriteFragment;
-import com.example.kimjungwon.livebusker.Fragment.HotFragment;
+import com.example.kimjungwon.livebusker.Fragment.MapFragment;
 import com.example.kimjungwon.livebusker.Fragment.StreamFragment;
 import com.example.kimjungwon.livebusker.R;
 
@@ -77,7 +77,7 @@ public class MainActivity extends AppCompatActivity {
 //                    });
                     return true;
                 case R.id.navigation_dashboard:
-                    ft.replace(R.id.content, new HotFragment()).commit();
+                    ft.replace(R.id.content, new MapFragment()).commit();
                     return true;
                 case R.id.navigation_notifications:
                     ft.replace(R.id.content, new FavoriteFragment()).commit();
@@ -109,7 +109,7 @@ public class MainActivity extends AppCompatActivity {
 //                    });
                     break;
                 case R.id.navigation_dashboard:
-                    ft.replace(R.id.content, new HotFragment()).commit();
+                    ft.replace(R.id.content, new MapFragment()).commit();
                     break;
                 case R.id.navigation_notifications:
                     ft.replace(R.id.content, new FavoriteFragment()).commit();

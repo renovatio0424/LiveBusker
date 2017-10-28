@@ -1,25 +1,29 @@
 package com.example.kimjungwon.livebusker.Activity;
 
+import android.Manifest;
 import android.content.Context;
 import android.content.pm.ActivityInfo;
-import android.content.res.AssetManager;
+import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.ImageFormat;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Matrix;
+import android.graphics.Paint;
+import android.graphics.Point;
+import android.graphics.PointF;
 import android.graphics.Rect;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
-import android.hardware.camera2.CameraDevice;
 import android.media.ImageReader;
-import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
-import android.support.annotation.IntDef;
 import android.support.annotation.NonNull;
 import android.support.annotation.RequiresApi;
+import android.support.v13.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.util.SparseArray;
@@ -44,11 +48,12 @@ import com.afollestad.materialdialogs.MaterialDialog;
 import com.example.kimjungwon.livebusker.Netty.ChatInitializer;
 import com.example.kimjungwon.livebusker.Network.PHPRequest;
 import com.example.kimjungwon.livebusker.R;
+import com.google.android.gms.vision.CameraSource;
 import com.google.android.gms.vision.Frame;
 import com.google.android.gms.vision.face.Face;
 import com.google.android.gms.vision.face.FaceDetector;
 import com.google.android.gms.vision.face.Landmark;
-import com.tzutalin.dlib.Constants;
+import com.google.android.gms.vision.face.LargestFaceFocusingProcessor;
 import com.tzutalin.dlib.FaceDet;
 import com.tzutalin.dlib.VisionDetRet;
 
@@ -57,15 +62,8 @@ import org.json.JSONObject;
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
-import org.opencv.android.Utils;
-import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
-import org.opencv.core.MatOfRect;
-import org.opencv.core.Point;
-import org.opencv.core.Scalar;
-import org.opencv.imgproc.Imgproc;
-import org.opencv.objdetect.CascadeClassifier;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -78,7 +76,6 @@ import java.sql.Date;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Semaphore;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
@@ -90,6 +87,7 @@ import io.netty.channel.ChannelOption;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
 
+import me.lake.librestreaming.client.Constants;
 import me.lake.librestreaming.client.RESClient;
 import me.lake.librestreaming.core.listener.RESConnectionListener;
 import me.lake.librestreaming.core.listener.RESScreenShotListener;
@@ -159,10 +157,15 @@ public class StreamingActivity extends AppCompatActivity implements RESConnectio
 //        System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
     }
 
-    CascadeClassifier faceDetector;
+    //    CascadeClassifier faceDetector;
     ImageReader previewReader;
     Bitmap bp2;
-
+    //마스크 변수
+    ImageView Mask_btn;
+    boolean MaskType_NOMASK = false;
+    boolean MaskType_BUNNYMASK = false;
+    boolean MaskType_SUNGLASS = false;
+    boolean MaskType_LANDMARK = false;
 
     private BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(this) {
         @Override
@@ -189,12 +192,12 @@ public class StreamingActivity extends AppCompatActivity implements RESConnectio
                         is.close();
                         os.close();
 
-                        faceDetector = new CascadeClassifier(mCascadeFile.getAbsolutePath());
-                        if (faceDetector.empty()) {
-                            Log.e(TAG, "Failed to load cascade classifier");
-                            faceDetector = null;
-                        } else
-                            Log.i(TAG, "Loaded cascade classifier from " + mCascadeFile.getAbsolutePath());
+//                        faceDetector = new CascadeClassifier(mCascadeFile.getAbsolutePath());
+//                        if (faceDetector.empty()) {
+//                            Log.e(TAG, "Failed to load cascade classifier");
+//                            faceDetector = null;
+//                        } else
+//                            Log.i(TAG, "Loaded cascade classifier from " + mCascadeFile.getAbsolutePath());
 
 
                         cascadeDir.delete();
@@ -553,7 +556,7 @@ public class StreamingActivity extends AppCompatActivity implements RESConnectio
 
         //필터 적용 영상에 아이콘 띄우기
         Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.ic_launcher);
-        BaseHardVideoFilter filter = new IconHardFilter(bitmap, new Rect(100, 100, 400, 400));
+        BaseHardVideoFilter filter = new IconHardFilter(bitmap, new Rect(0, 0, 0, 0));
         resClient.setHardVideoFilter(filter);
 //        카메라 화면 폭 구하기
         Display display = StreamingActivity.this.getWindowManager().getDefaultDisplay();
@@ -563,6 +566,18 @@ public class StreamingActivity extends AppCompatActivity implements RESConnectio
         bp2 = BitmapFactory.decodeResource(getResources(), R.drawable.mask);
 
 
+        faceDetector =
+                new FaceDetector.Builder(getApplicationContext())
+                        .setProminentFaceOnly(true)
+                        .setClassificationType(FaceDetector.ALL_CLASSIFICATIONS)
+                        .setTrackingEnabled(true)
+                        .setMode(FaceDetector.FAST_MODE)
+                        .setLandmarkType(FaceDetector.ALL_LANDMARKS)
+                        .build();
+
+
+        Mask_btn = (ImageView) findViewById(R.id.mask_btn);
+        Mask_btn.setOnClickListener(this);
     }
 
     private void initView() {
@@ -808,31 +823,331 @@ public class StreamingActivity extends AppCompatActivity implements RESConnectio
     }
 
     private int mFrameNum = 0;
+    FaceDetector faceDetector;
+
+    public Bitmap resizedBitmap(Bitmap bm, int newWidth, int newHeight) {
+        int width = bm.getWidth();
+        int height = bm.getHeight();
+        float scaleWidth = ((float) newWidth) / width;
+        float scaleHeight = ((float) newHeight) / height;
+        // CREATE A MATRIX FOR THE MANIPULATION
+        Matrix matrix = new Matrix();
+        // RESIZE THE BIT MAP
+        matrix.postScale(scaleWidth, scaleHeight);
+
+        // "RECREATE" THE NEW BITMAP
+        Bitmap resizedBitmap = Bitmap.createBitmap(
+                bm, 0, 0, width, height, matrix, false);
+        bm.recycle();
+        return resizedBitmap;
+    }
+
+    public void setCanvas() {
+        mFaceLandmarkPaint = new Paint();
+        mFaceLandmarkPaint.setColor(Color.GREEN);
+        mFaceLandmarkPaint.setStrokeWidth(2);
+        mFaceLandmarkPaint.setStyle(Paint.Style.STROKE);
+    }
+
+    Paint mFaceLandmarkPaint;
+
+    public void setFaceDetect() {
+        faceDet = new FaceDet(com.tzutalin.dlib.Constants.getFaceShapeModelPath());
+
+    }
+
+    FaceDet faceDet;
+
+    public Bitmap SetBunnyMask(Bitmap faceBitmap) {
+        float resizeRatioWidth = 200 / ((float) faceBitmap.getWidth());
+        float resizeRatioHeight = 200 / ((float) faceBitmap.getHeight());
+
+        Bitmap resizeFace = resizedBitmap(faceBitmap, 200, 200);
+
+        Frame frame = new Frame.Builder().setBitmap(resizeFace).build();
+        SparseArray<Face> faces = faceDetector.detect(frame);
+//        <DLIB>
+//        setFaceDetect();
+//        List<VisionDetRet> results = faceDet.detect(resizeFace);
+//        for(final VisionDetRet ret : results){
+//            String label = ret.getLabel();
+//            int x1 = ret.getLeft();
+//            int y1 = ret.getTop();
+//            int x2 = ret.getRight();
+//            int y2 = ret.getBottom();
+//
+//            Canvas canvas = new Canvas(resizeFace);
+//            Rect Bounds= new Rect();
+//            Bounds.left = (int) x1;
+//            Bounds.top = (int) y1;
+//            Bounds.right = (int) x2;
+//            Bounds.bottom = (int) y2;
+//
+//            canvas.drawRect(Bounds, mFaceLandmarkPaint);
+//
+//            ArrayList<Point> landmarks = ret.getFaceLandmarks();
+//            for(int i = 0 ; i < landmarks.size() ; i ++){
+//                Point point = landmarks.get(i);
+//                int posX = point.x;
+//                int posY = point.y;
+//                canvas.drawText(String.valueOf(i),posX,posY,mFaceLandmarkPaint);
+//            }
+//        }
+        setCanvas();
+
+        Bitmap Bunny_nose = null;
+        Bitmap Bunny_ear = null;
+        Rect noseRect = null;
+
+        Bitmap Maskbp = Bitmap.createBitmap(faceBitmap.getWidth(), faceBitmap.getHeight(), Bitmap.Config.ARGB_8888);
+
+        for (int i = 0; i < faces.size(); i++) {
+            Face thisFace = faces.valueAt(i);
+            float x1 = thisFace.getPosition().x;
+            float y1 = thisFace.getPosition().y;
+            float x2 = x1 + thisFace.getWidth();
+            float y2 = y1 + thisFace.getHeight();
+
+            Canvas canvas = new Canvas(Maskbp);
+
+            Rect Bounds = new Rect();
+            Bounds.left = (int) (x1 / (resizeRatioWidth * 1.5));
+            Bounds.top = (int) (y1 / (resizeRatioHeight * 1.7));
+            Bounds.right = (int) (x2 / (resizeRatioWidth * 2.0));
+            Bounds.bottom = (int) (y2 / (resizeRatioHeight * 1.7));
+
+//            얼굴폭 & 높이 보정
+            int FaceWidth = Bounds.right - Bounds.left;
+            int FaceHeight = Bounds.bottom - Bounds.top;
+
+//            canvas.drawRect(Bounds, mFaceLandmarkPaint);
+            if (Bunny_ear == null) {
+                Bunny_ear = BitmapFactory.decodeResource(getResources(), R.drawable.bunny_ear);
+            } else {
+                Bunny_ear.recycle();
+            }
+
+            Rect earRect = new Rect();
+            earRect.left = 0;
+            earRect.top = 0;
+            earRect.right = 30;
+            earRect.bottom = 30;
+//            earRect.left = Bounds.left + FaceWidth/2 - FaceWidth/3;
+//            earRect.right = Bounds.left + FaceWidth/2 + FaceWidth/3;
+//            earRect.top = Bounds.top - FaceHeight * (2/3);
+//            earRect.bottom = Bounds.top;
+
+            canvas.drawBitmap(Bunny_ear, null, earRect, null);
+            Log.d(TAG, "<face detect> \nx1: " + x1 + " y1: " + y1 + " x2: " + x2 + " y2: " + y2);
+
+
+            List<Landmark> landmarks = thisFace.getLandmarks();
+            for (int j = 0; j < landmarks.size(); j++) {
+                Landmark landmark = landmarks.get(j);
+                PointF pos = landmark.getPosition();
+                int posX = (int) (pos.x / (resizeRatioWidth * 1.8));
+                int posY = (int) (pos.y / (resizeRatioHeight * 1.7));
+
+                if (landmark.getType() == Landmark.NOSE_BASE) {
+//                    처음 만들때
+                    if (Bunny_nose == null) {
+                        Bunny_nose = BitmapFactory.decodeResource(getResources(), R.drawable.bunny_nose);
+                    } else {
+                        Bunny_nose.recycle();
+                    }
+//                    폭이 얼굴의 1/2이고 높이가 얼굴의 1/3인 이미지 만들기
+                    int Left = (int) (posX - FaceWidth / (2 * 2));
+                    int Top = (int) (posY - FaceHeight / (3 * 2));
+                    int Right = (int) (Left + FaceWidth / 2);
+                    int Bottom = (int) (Top + FaceHeight / 3);
+
+                    noseRect = new Rect(Left, Top, Right, Bottom);
+
+                    canvas.drawBitmap(Bunny_nose, null, noseRect, null);
+//                    Rect dst = new Rect(Left,Top,Right,Bottom);
+//                    canvas.drawBitmap(Bunny_nose, dst, dst, null);
+
+                }
+//                canvas.drawCircle(posX, posY, 2, mFaceLandmarkPaint);
+//                canvas.drawText(String.valueOf(j), posX, posY, mFaceLandmarkPaint);
+                Log.d(TAG, "landmark (" + j + ") \nx: " + pos.x + " y: " + pos.y);
+            }
+        }
+        return Maskbp;
+    }
+
+    public Bitmap setDetectMask(Bitmap faceBitmap) {
+        float resizeRatioWidth = 200 / ((float) faceBitmap.getWidth());
+        float resizeRatioHeight = 200 / ((float) faceBitmap.getHeight());
+
+        Bitmap resizeFace = resizedBitmap(faceBitmap, 200, 200);
+
+        Frame frame = new Frame.Builder().setBitmap(resizeFace).build();
+        SparseArray<Face> faces = faceDetector.detect(frame);
+
+        setCanvas();
+
+        Bitmap Maskbp = Bitmap.createBitmap(faceBitmap.getWidth(), faceBitmap.getHeight(), Bitmap.Config.ARGB_8888);
+
+
+        for (int i = 0; i < faces.size(); i++) {
+            Face thisFace = faces.valueAt(i);
+            float x1 = thisFace.getPosition().x;
+            float y1 = thisFace.getPosition().y;
+            float x2 = x1 + thisFace.getWidth();
+            float y2 = y1 + thisFace.getHeight();
+
+            Canvas canvas = new Canvas(Maskbp);
+
+            Rect Bounds = new Rect();
+            Bounds.left = (int) (x1 / (resizeRatioWidth * 1.5));
+            Bounds.top = (int) (y1 / (resizeRatioHeight * 1.7));
+            Bounds.right = (int) (x2 / (resizeRatioWidth * 2.0));
+            Bounds.bottom = (int) (y2 / (resizeRatioHeight * 1.7));
+
+            canvas.drawRect(Bounds, mFaceLandmarkPaint);
+
+            Rect earRect = new Rect();
+            earRect.left = 0;
+            earRect.top = 0;
+            earRect.right = 30;
+            earRect.bottom = 30;
+
+            Log.d(TAG, "<face detect> \nx1: " + x1 + " y1: " + y1 + " x2: " + x2 + " y2: " + y2);
+
+
+            List<Landmark> landmarks = thisFace.getLandmarks();
+            for (int j = 0; j < landmarks.size(); j++) {
+                Landmark landmark = landmarks.get(j);
+                PointF pos = landmark.getPosition();
+                int posX = (int) (pos.x / (resizeRatioWidth * 1.8));
+                int posY = (int) (pos.y / (resizeRatioHeight * 1.7));
+
+                canvas.drawText(String.valueOf(j), posX, posY, mFaceLandmarkPaint);
+                Log.d(TAG, "landmark (" + j + ") \nx: " + pos.x + " y: " + pos.y);
+            }
+        }
+        return Maskbp;
+    }
+
+    private Bitmap SetSunglass(Bitmap faceBitmap) {
+        float resizeRatioWidth = 200 / ((float) faceBitmap.getWidth());
+        float resizeRatioHeight = 200 / ((float) faceBitmap.getHeight());
+
+        Bitmap resizeFace = resizedBitmap(faceBitmap, 200, 200);
+
+        Frame frame = new Frame.Builder().setBitmap(resizeFace).build();
+        SparseArray<Face> faces = faceDetector.detect(frame);
+
+        setCanvas();
+
+        Bitmap Maskbp = Bitmap.createBitmap(faceBitmap.getWidth(), faceBitmap.getHeight(), Bitmap.Config.ARGB_8888);
+        Bitmap SunglassBP = BitmapFactory.decodeResource(getResources(), R.drawable.mysunglass);
+        Rect sunglassRect = new Rect();
+
+        int eyePosX, eyePosY;
+
+        for (int i = 0; i < faces.size(); i++) {
+            Face thisFace = faces.valueAt(i);
+            float x1 = thisFace.getPosition().x;
+            float y1 = thisFace.getPosition().y;
+            float x2 = x1 + thisFace.getWidth();
+            float y2 = y1 + thisFace.getHeight();
+
+            Canvas canvas = new Canvas(Maskbp);
+
+            Rect Bounds = new Rect();
+            Bounds.left = (int) (x1 / (resizeRatioWidth * 1.5));
+            Bounds.top = (int) (y1 / (resizeRatioHeight * 1.7));
+            Bounds.right = (int) (x2 / (resizeRatioWidth * 2.0));
+            Bounds.bottom = (int) (y2 / (resizeRatioHeight * 1.7));
+
+            //            얼굴폭 & 높이 보정
+            int FaceWidth = Bounds.right - Bounds.left;
+            int FaceHeight = Bounds.bottom - Bounds.top;
+
+//            안경 가로 길이 설정
+            sunglassRect.left = Bounds.left;
+            sunglassRect.right = Bounds.right;
+
+            Log.d(TAG, "<face detect> \nx1: " + x1 + " y1: " + y1 + " x2: " + x2 + " y2: " + y2);
+
+            List<Landmark> landmarks = thisFace.getLandmarks();
+            for (int j = 0; j < landmarks.size(); j++) {
+                Landmark landmark = landmarks.get(j);
+                PointF pos = landmark.getPosition();
+                int posY = (int) (pos.y / (resizeRatioHeight * 1.7));
+
+//                안경 높이 설정
+                if(landmark.getType() == Landmark.LEFT_EYE){
+                    sunglassRect.top = (int) (posY - FaceHeight/6);
+                    sunglassRect.bottom = (int) (posY + FaceHeight/6);
+
+                }else if(landmark.getType() == Landmark.RIGHT_EYE){
+                    sunglassRect.top = (int) (posY - FaceHeight/6);
+                    sunglassRect.bottom = (int) (posY + FaceHeight/6);
+                }
+                Log.d(TAG, "landmark (" + j + ") \nx: " + pos.x + " y: " + pos.y);
+            }
+
+            canvas.drawBitmap(SunglassBP, null, sunglassRect, null);
+        }
+        return Maskbp;
+    }
 
     @Override
     public void onSurfaceTextureUpdated(SurfaceTexture surface) {
         Log.d(TAG, "on surface texture updated");
-        int second = Integer.parseInt(getUserkey());
 
         final Bitmap faceBP = camera_preview.getBitmap();
 
-//        opencv 얼굴인식
-//        for(int i = 0 ; i < 4 ; i ++){
-//            Log.d(TAG,"face[" + i + "]: " + face[i] + "\n");
-//        }
+//        Bitmap Maskbp = SetBunnyMask(faceBP);
+        Bitmap Maskbp = null;
+        if(MaskType_NOMASK){
+            Maskbp = null;
+        }else if(MaskType_BUNNYMASK){
+            Maskbp = SetBunnyMask(faceBP);
+            IconHardFilter filter = (IconHardFilter) resClient.acquireHardVideoFilter();
+            filter.updateIcon(Maskbp, new Rect(0, 0, faceBP.getWidth(), faceBP.getHeight()));
+            resClient.releaseHardVideoFilter();
+        }else if(MaskType_SUNGLASS){
+            Maskbp = SetSunglass(faceBP);
+            IconHardFilter filter = (IconHardFilter) resClient.acquireHardVideoFilter();
+            filter.updateIcon(Maskbp, new Rect(0, 0, faceBP.getWidth(), faceBP.getHeight()));
+            resClient.releaseHardVideoFilter();
+        }else if(MaskType_LANDMARK){
+            Maskbp = setDetectMask(faceBP);
+            IconHardFilter filter = (IconHardFilter) resClient.acquireHardVideoFilter();
+            filter.updateIcon(Maskbp, new Rect(0, 0, faceBP.getWidth(), faceBP.getHeight()));
+            resClient.releaseHardVideoFilter();
+        }
 
-//        File cascadeDir = getDir("cascade" , Context.MODE_PRIVATE);
-//        File mCascadeFile = new File(cascadeDir, "lbpcascade_frontalface.xml");
+
+//                filter.updateIcon(bp2, new Rect(rect.x, rect.y, rect.x + rect.width, rect.y + rect.height));
+//        filter.updateIcon(Bunny_nose, noseRect);
 
 
-//        CascadeClassifier faceDetector
-//                = new CascadeClassifier("android.resource://com.example.test/raw/haarcascade_frontalface_alt.xml");
-////                = new CascadeClassifier(mCascadeFile.getAbsolutePath());
-////                = new CascadeClassifier(StreamingActivity.this.getResources("haarcascade_frontalface_alt.xml").getPath());
-////                = new CascadeClassifier("haarcascade_frontalface_alt.xml");
-////                = new CascadeClassifier(FaceDetector.class.getResource("haarcascade_frontalface_alt.xml").getPath());
-//        faceDetector.load("haarcascade_frontalface_alt");
 
+
+/*        opencv 얼굴인식
+        for(int i = 0 ; i < 4 ; i ++){
+            Log.d(TAG,"face[" + i + "]: " + face[i] + "\n");
+        }
+
+        File cascadeDir = getDir("cascade" , Context.MODE_PRIVATE);
+        File mCascadeFile = new File(cascadeDir, "lbpcascade_frontalface.xml");
+
+
+        CascadeClassifier faceDetector
+                = new CascadeClassifier("android.resource://com.example.test/raw/haarcascade_frontalface_alt.xml");
+//                = new CascadeClassifier(mCascadeFile.getAbsolutePath());
+//                = new CascadeClassifier(StreamingActivity.this.getResources("haarcascade_frontalface_alt.xml").getPath());
+//                = new CascadeClassifier("haarcascade_frontalface_alt.xml");
+//                = new CascadeClassifier(FaceDetector.class.getResource("haarcascade_frontalface_alt.xml").getPath());
+        faceDetector.load("haarcascade_frontalface_alt");
+*/
+
+/*opencv 얼굴인식
         Mat image = new Mat();
 //        Bitmap bp32 = bp.copy(Bitmap.Config.ARGB_8888, true);
 //        Mat형태로 변환
@@ -875,10 +1190,7 @@ public class StreamingActivity extends AppCompatActivity implements RESConnectio
                 filter.updateIcon(bp2, new Rect(a, b, c, d));
                 resClient.releaseHardVideoFilter();
             }
-
-
-        }
-
+        }*/
         //마스크 이미지
 
 //
@@ -1060,6 +1372,8 @@ public class StreamingActivity extends AppCompatActivity implements RESConnectio
     }
 
 
+
+
     @Override
     public void onClick(View v) {
         switch (v.getId()) {
@@ -1146,6 +1460,50 @@ public class StreamingActivity extends AppCompatActivity implements RESConnectio
                     started = !started;
                 }
                 finish();
+                break;
+            case R.id.mask_btn:
+                MaterialDialog select_mask_dialog = new MaterialDialog.Builder(StreamingActivity.this)
+                        .title("마스크를 선택해주세요")
+                        .items(R.array.mask)
+                        .itemsCallbackSingleChoice(-1, new MaterialDialog.ListCallbackSingleChoice() {
+                            @Override
+                            public boolean onSelection(MaterialDialog dialog, View itemView, int which, CharSequence text) {
+                                switch (which) {
+//                                    노마스크
+                                    case 0:
+                                        MaskType_NOMASK = true;
+                                        MaskType_BUNNYMASK = false;
+                                        MaskType_SUNGLASS = false;
+                                        MaskType_LANDMARK = false;
+                                        break;
+//                                    토끼코
+                                    case 1:
+                                        MaskType_BUNNYMASK = true;
+                                        MaskType_NOMASK = false;
+                                        MaskType_SUNGLASS = false;
+                                        MaskType_LANDMARK = false;
+                                        break;
+//                                    썬글라스
+                                    case 2:
+                                        MaskType_SUNGLASS = true;
+                                        MaskType_NOMASK = false;
+                                        MaskType_BUNNYMASK = false;
+                                        MaskType_LANDMARK = false;
+                                        break;
+//                                    랜드마크
+                                    case 3:
+                                        MaskType_LANDMARK = true;
+                                        MaskType_NOMASK = false;
+                                        MaskType_BUNNYMASK = false;
+                                        MaskType_SUNGLASS = false;
+                                        break;
+                                }
+                                Toast.makeText(StreamingActivity.this, "select position: " + which, Toast.LENGTH_SHORT).show();
+                                return true;
+                            }
+                        })
+                        .positiveText("확인")
+                        .show();
                 break;
         }
     }
