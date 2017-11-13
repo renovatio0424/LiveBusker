@@ -95,6 +95,10 @@ public class StreamFragment extends Fragment implements SwipeRefreshLayout.OnRef
 //                        e.printStackTrace();
 //                    }
 //                    chatserver
+                    while(StreamList.size() > 4){
+                        StreamList.remove(0);
+                    }
+
                     try {
                         JSONArray RoomArray = new JSONArray(msg.obj + "");
                         Log.d(TAG,"room list: " + msg.obj + "");
@@ -108,7 +112,7 @@ public class StreamFragment extends Fragment implements SwipeRefreshLayout.OnRef
                                 int usernum = Room.getInt("UserNum");
 
                                 Stream stream = new Stream(0,title,streamkey);
-                                StreamList.add(stream);
+                                StreamList.add(0,stream);
                             }
                         }
                     } catch (JSONException e) {
@@ -121,6 +125,8 @@ public class StreamFragment extends Fragment implements SwipeRefreshLayout.OnRef
                     sa.notifyDataSetChanged();
                     Log.d(TAG,"set stream adapter");
                     Log.d(TAG,"setStreamList size: " + StreamList.size());
+
+                    swipeRefreshLayout.setRefreshing(false);
                     break;
 //                채팅방 목록 요청
                 case 0x04:
@@ -234,13 +240,35 @@ public class StreamFragment extends Fragment implements SwipeRefreshLayout.OnRef
         //리사이클러뷰
         StreamListView = (RecyclerView) Rootview.findViewById(R.id.stream_lv);
         StreamList = new ArrayList<>();
+
+        //하드 코딩 데이터
+        Stream ex1 = new Stream(1,"지하철 버스킹!","aluYo-FSqiw");
+        Stream ex2 = new Stream(1,"에일리언 홍대 버스킹~","P-k5Y_DxQJY");
+        Stream ex3 = new Stream(1,"[JHK TV] 홍대 거리 공연 ","G_jA6itU_FA");
+        Stream ex4 = new Stream(1,"그대라는 사치 - 황인욱TV","7_fUOo7_zPY");
+
+        StreamList.add(ex1);
+        StreamList.add(ex2);
+        StreamList.add(ex3);
+        StreamList.add(ex4);
+
         setStreamList();
         connect(handler);
 
 
         Log.d(TAG,"list size : " + StreamList.size());
         for(int i = 0 ; i < StreamList.size() ; i++){
-            Log.d(TAG,"stream " + i + ")id/ " + StreamList.get(i).getId() + " title/ " + StreamList.get(i).getTitle());
+            Log.d(TAG,"stream " + i + ")\nid/ " + StreamList.get(i).getId() + "\n title/ " + StreamList.get(i).getTitle());
+        }
+
+        //네티 접속 안되었을 경우 하드코드한 아이템 어뎁터에 넣기
+        if(sa == null){
+            sa = new Stream_Adapter(StreamList,getContext());
+            Log.d(TAG,"create stream adapter");
+            StreamListView.setAdapter(sa);
+            sa.notifyDataSetChanged();
+            Log.d(TAG,"set stream adapter");
+            Log.d(TAG,"setStreamList size: " + StreamList.size());
         }
 
         RecyclerView.LayoutManager lm = new LinearLayoutManager(getContext());
@@ -260,7 +288,7 @@ public class StreamFragment extends Fragment implements SwipeRefreshLayout.OnRef
 
     @Override
     public void onRefresh() {
-        handler.obtainMessage(0x00);
-        swipeRefreshLayout.setRefreshing(false);
+        handler.obtainMessage(0x00).sendToTarget();
+//        swipeRefreshLayout.setRefreshing(false);
     }
 }

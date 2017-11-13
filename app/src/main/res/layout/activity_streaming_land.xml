@@ -140,12 +140,16 @@
                     android:id="@+id/chat_layout"
                     android:layout_width="200dp"
                     android:layout_height="match_parent"
-                    android:background="#eee0e0e0">
+                    android:background="#e4e4e4e4">
 
                     <TableRow
                         android:gravity="bottom"
                         android:layout_width="match_parent"
-                        android:layout_height="match_parent" >
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentBottom="true"
+                        android:layout_alignParentLeft="true"
+                        android:layout_alignParentStart="true"
+                        android:id="@+id/tableRow2">
 
                         <EditText
                             android:id="@+id/msg_et_stream"
@@ -159,6 +163,7 @@
                             android:textColorHint="#000000" />
 
                         <Button
+                            android:layout_margin="4dp"
                             android:id="@+id/send_btn_stream"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
@@ -166,16 +171,23 @@
 
                     </TableRow>
 
-                    <TextView
-                        android:padding="5dp"
-                        android:textColor="#000000"
+                    <android.support.v7.widget.RecyclerView
                         android:id="@+id/Chatview"
                         android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:text="채팅방에 입장하셨습니다\n"
-                        android:layout_alignParentTop="true"
-                        android:layout_alignParentLeft="true"
-                        android:layout_alignParentStart="true" />
+                        android:layout_height="300dp"
+                        android:layout_above="@+id/tableRow2"
+                        android:layout_alignParentTop="true" />
+
+                    <!--<TextView-->
+                        <!--android:padding="5dp"-->
+                        <!--android:textColor="#000000"-->
+                        <!--android:id="@+id/Chatview"-->
+                        <!--android:layout_width="match_parent"-->
+                        <!--android:layout_height="match_parent"-->
+                        <!--android:text="채팅방에 입장하셨습니다\n"-->
+                        <!--android:layout_alignParentTop="true"-->
+                        <!--android:layout_alignParentLeft="true"-->
+                        <!--android:layout_alignParentStart="true" />-->
 
 
                 </RelativeLayout>

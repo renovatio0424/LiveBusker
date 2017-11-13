@@ -2,7 +2,7 @@
 <resources>
     <string-array name="bitrate">
         <item>고화질</item>
-        <item>중화질</item>
+        <item>일반화질</item>
         <item>저화질</item>
     </string-array>
 

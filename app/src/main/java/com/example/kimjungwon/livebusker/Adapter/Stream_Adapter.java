@@ -22,6 +22,7 @@ import com.example.kimjungwon.livebusker.R;
 import java.util.ArrayList;
 
 import static com.example.kimjungwon.livebusker.Config.URL.Thumbnail_Addr;
+import static com.example.kimjungwon.livebusker.Config.URL.YouTube_Thumnail_URL;
 
 /**
  * Created by kimjungwon on 2017-09-07.
@@ -49,19 +50,28 @@ public class Stream_Adapter extends RecyclerView.Adapter<Stream_Adapter.mViewHol
     public void onBindViewHolder(mViewHolder holder, final int position) {
         Log.d(TAG,"onbindviewHolder");
         Stream stream = (Stream) streams.get(position);
-        holder.itemView.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Intent intent = new Intent(context, WatchingActivity.class);
-                intent.putExtra("Streamkey",streams.get(position).getStream_key());
-                intent.putExtra("Roomname",streams.get(position).getTitle());
+
+        if(stream.getId() == 0){
+            Log.d(TAG,"stream id: " + 0);
+            holder.itemView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    Intent intent = new Intent(context, WatchingActivity.class);
+                    intent.putExtra("Streamkey",streams.get(position).getStream_key());
+                    intent.putExtra("Roomname",streams.get(position).getTitle());
 //                Toast.makeText(context, "item position: " + position, Toast.LENGTH_SHORT).show();
-                Log.d(TAG,"title" + streams.get(position).getStream_key());
-                context.startActivity(intent);
-            }
-        });
-        Glide.with(context).load(Thumbnail_Addr + stream.getStream_key() + ".jpg").into(holder.ThumnailIV);
-        holder.TitleTV.setText(stream.getTitle());
+                    Log.d(TAG,"title" + streams.get(position).getStream_key());
+                    context.startActivity(intent);
+                }
+            });
+            Glide.with(context).load(Thumbnail_Addr + stream.getStream_key() + ".jpg").into(holder.ThumnailIV);
+            holder.TitleTV.setText(stream.getTitle());
+        }else if(stream.getId() == 1){
+            Log.d(TAG,"stream id: " + 1);
+            Glide.with(context).load(YouTube_Thumnail_URL + stream.getStream_key() + "/hqdefault.jpg").into(holder.ThumnailIV);
+            holder.TitleTV.setText(stream.getTitle());
+        }
+
     }
 
     @Override

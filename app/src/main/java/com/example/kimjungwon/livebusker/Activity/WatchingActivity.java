@@ -9,6 +9,8 @@ import android.os.Handler;
 import android.os.Message;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.Surface;
@@ -24,7 +26,9 @@ import android.widget.Toast;
 
 import com.afollestad.materialdialogs.DialogAction;
 import com.afollestad.materialdialogs.MaterialDialog;
+import com.example.kimjungwon.livebusker.Adapter.Chat_Adapter;
 import com.example.kimjungwon.livebusker.Config.MyApplication;
+import com.example.kimjungwon.livebusker.CustomClass.Chat;
 import com.example.kimjungwon.livebusker.CustomClass.EventLogger;
 import com.example.kimjungwon.livebusker.Netty.ChatInitializer;
 import com.example.kimjungwon.livebusker.R;
@@ -70,6 +74,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.sql.Date;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.UUID;
 
 import io.netty.bootstrap.Bootstrap;
@@ -109,7 +114,11 @@ public class WatchingActivity extends AppCompatActivity implements VideoRenderer
     FrameLayout controller;
     ImageView more_btn;
     //채팅
-    TextView view_chat;
+//    TextView view_chat;
+    RecyclerView view_chat;
+    Chat_Adapter chat_adapter;
+    ArrayList<Chat> ChatList;
+
     EditText et_msg;
     Button send_btn;
 
@@ -324,8 +333,17 @@ public class WatchingActivity extends AppCompatActivity implements VideoRenderer
         player.setVideoDebugListener(this); //for listening to resolution change and  outputing the resolution
 
 //        채팅 서버 접속
-        view_chat = (TextView) findViewById(R.id.View_chat);
-        view_chat.setText("[" + title + "]에 입장하셨습니다\n");
+        view_chat = (RecyclerView) findViewById(R.id.View_chat);
+        ChatList = new ArrayList<>();
+        ChatList.add(new Chat("공지","채팅방에 입장했습니다"));
+        chat_adapter = new Chat_Adapter(ChatList,getApplicationContext());
+        view_chat.setAdapter(chat_adapter);
+        LinearLayoutManager lm = new LinearLayoutManager(getApplicationContext());
+        view_chat.setLayoutManager(lm);
+        chat_adapter.notifyDataSetChanged();
+
+
+//        view_chat.setText("[" + title + "]에 입장하셨습니다\n");
 
         et_msg = (EditText) findViewById(R.id.et_msg);
         send_btn = (Button) findViewById(R.id.btn_send);
@@ -435,7 +453,15 @@ public class WatchingActivity extends AppCompatActivity implements VideoRenderer
                                 })
                                 .show();
                     }
-                    view_chat.setText(view_chat.getText() + m + "\r\n");
+                    try {
+                        JSONObject cht = new JSONObject(m);
+                        chat_adapter.Chats.add(new Chat(cht.getString("name"),cht.getString("msg")));
+                        chat_adapter.notifyDataSetChanged();
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+
+//                    view_chat.setText(view_chat.getText() + m + "\r\n");
                     break;
                 case 0x02:
                     //send complete
@@ -453,7 +479,10 @@ public class WatchingActivity extends AppCompatActivity implements VideoRenderer
                     try {
                         jsonObject.put("Type","2");
                         jsonObject.put("Streamkey",Stream_key);
-                        jsonObject.put("Message",mmm);
+                        JSONObject cht = new JSONObject();
+                        cht.put("name","User " + name);
+                        cht.put("msg",et_m);
+                        jsonObject.put("Message",cht.toString());
                     } catch (JSONException e) {
                         e.printStackTrace();
                     }
@@ -479,6 +508,7 @@ public class WatchingActivity extends AppCompatActivity implements VideoRenderer
                         }
                     });
                     Log.d("Main","send Msg");
+
                     break;
                 case 0x04:
                     ///채팅 방 퇴장

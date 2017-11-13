@@ -4,8 +4,8 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/maplayout"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:fitsSystemWindows="true">
+
+    android:layout_height="match_parent">
 
     <fragment xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:map="http://schemas.android.com/apk/res-auto"
@@ -16,12 +16,13 @@
         android:layout_height="match_parent"
         tools:context="com.example.kimjungwon.livebusker.Fragment.MapFragment">
 
-        <Button
-            style="@style/bold_text"
+
+        <ImageView
+            android:padding="5dp"
             android:id="@+id/ar_btn"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="AR" />
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            app:srcCompat="@drawable/change_edit" />
     </fragment>
 
 
@@ -38,6 +39,8 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:orientation="vertical">
+
+
 
             <TextView
                 android:id="@+id/textView2"
@@ -86,7 +89,6 @@
                     android:layout_weight="1"
                     android:text="방송보기" />
             </TableRow>
-
         </LinearLayout>
     </android.support.v4.widget.NestedScrollView>
 </android.support.design.widget.CoordinatorLayout>

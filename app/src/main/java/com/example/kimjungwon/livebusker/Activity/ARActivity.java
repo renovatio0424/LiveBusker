@@ -3,6 +3,7 @@ package com.example.kimjungwon.livebusker.Activity;
 import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.location.Location;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -36,6 +37,12 @@ public class ARActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_ar);
 
+        //        액션바 숨기기
+        android.support.v7.app.ActionBar actionBar = getSupportActionBar();
+        if (actionBar != null) {
+            actionBar.hide();
+        }
+
         mCameraSurfaceView1 = (SurfaceView) findViewById(R.id.cameraTextureView);
 
         int permissionCamera = 0;
@@ -50,13 +57,25 @@ public class ARActivity extends AppCompatActivity {
                 getIntent().hasExtra("src_lng") &&
                 getIntent().hasExtra("dst_lat") &&
                 getIntent().hasExtra("dst_lng")){
+
             Intent intent = getIntent();
             compass.src = new LatLng(intent.getDoubleExtra("src_lat",0),intent.getDoubleExtra("src_lng",0));
             compass.dst = new LatLng(intent.getDoubleExtra("dst_lat",0),intent.getDoubleExtra("dst_lng",0));
+
+            float[] distanceResult = new float[1];
+            Location.distanceBetween(intent.getDoubleExtra("src_lat",0),
+                    intent.getDoubleExtra("src_lng",0),
+                    intent.getDoubleExtra("dst_lat",0),
+                    intent.getDoubleExtra("dst_lng",0),
+                    distanceResult);
+
+            compass.distance = distanceResult[0];
+            Log.d(TAG, "distance: " + distanceResult[0] + "m");
+
+            compass.PlaceName = intent.getStringExtra("place_name");
         }
 
         compass.arrowView = (ImageView) findViewById(R.id.main_image_dial);
-
 //        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
 //            permissionCamera = checkSelfPermission(Manifest.permission.CAMERA);
 //            if(permissionCamera == PackageManager.PERMISSION_DENIED) {

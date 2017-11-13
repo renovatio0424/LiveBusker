@@ -2,10 +2,12 @@ package com.example.kimjungwon.livebusker.CustomClass;
 
 import android.app.Activity;
 import android.content.Context;
+import android.graphics.Color;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.location.Location;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
@@ -42,9 +44,12 @@ public class Compass implements SensorEventListener {
     private ImageView PlaceMarker;
     private ImageView CompassPlane;
     private float CameraWidth;
+    private TextView DistanceView;
 
-    public LatLng src,dst;
 
+    public LatLng src, dst;
+    public float distance;
+    public String PlaceName;
     // compass arrow to rotate
     public ImageView arrowView = null;
 
@@ -87,7 +92,7 @@ public class Compass implements SensorEventListener {
                 Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF,
                 0.5f);
         currectAzimuth = azimuth;
-        degree_view.setText(String.valueOf("degreeX: " + (int) currectAzimuth) + "\ndegreeY: " + (int)azimuthY);
+        degree_view.setText(String.valueOf("degreeX: " + (int) currectAzimuth) + "\ndegreeY: " + (int) azimuthY);
 
         an.setDuration(500);
         an.setRepeatCount(0);
@@ -101,16 +106,26 @@ public class Compass implements SensorEventListener {
         PlaceMarker.setId(0);
         PlaceMarker.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT));
-        PlaceMarker.setBackgroundResource(R.drawable.redmarker);
+        PlaceMarker.setBackgroundResource(R.drawable.maps_and_flags);
+
+
+        DistanceView = new TextView(mcontext);
+        DistanceView.setTextSize(30);
+        DistanceView.setPadding(10, 10, 10, 10);
+        DistanceView.setTextColor(Color.BLACK);
+        DistanceView.setBackgroundResource(R.drawable.round_background);
+        DistanceView.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT));
+
         movefrom = -PlaceMarker.getHeight();
+
     }
 
     float movefrom = 0;
     long pasttime = 0;
     float movefromY = 0;
 
-    public float bearingP1toP2(LatLng src, LatLng dst)
-    {
+    public float bearingP1toP2(LatLng src, LatLng dst) {
 
         double P1_latitude = src.latitude;
         double P1_longitude = src.longitude;
@@ -131,16 +146,13 @@ public class Compass implements SensorEventListener {
         radian_distance = Math.acos(Math.sin(Cur_Lat_radian) * Math.sin(Dest_Lat_radian) + Math.cos(Cur_Lat_radian) * Math.cos(Dest_Lat_radian) * Math.cos(Cur_Lon_radian - Dest_Lon_radian));
 
         // 목적지 이동 방향을 구한다.(현재 좌표에서 다음 좌표로 이동하기 위해서는 방향을 설정해야 한다. 라디안값이다.
-        double radian_bearing = Math.acos((Math.sin(Dest_Lat_radian) - Math.sin(Cur_Lat_radian) * Math.cos(radian_distance)) / (Math.cos(Cur_Lat_radian) * Math.sin(radian_distance)));		// acos의 인수로 주어지는 x는 360분법의 각도가 아닌 radian(호도)값이다.
+        double radian_bearing = Math.acos((Math.sin(Dest_Lat_radian) - Math.sin(Cur_Lat_radian) * Math.cos(radian_distance)) / (Math.cos(Cur_Lat_radian) * Math.sin(radian_distance)));        // acos의 인수로 주어지는 x는 360분법의 각도가 아닌 radian(호도)값이다.
 
         double true_bearing = 0;
-        if (Math.sin(Dest_Lon_radian - Cur_Lon_radian) < 0)
-        {
+        if (Math.sin(Dest_Lon_radian - Cur_Lon_radian) < 0) {
             true_bearing = radian_bearing * (180 / 3.141592);
             true_bearing = 360 - true_bearing;
-        }
-        else
-        {
+        } else {
             true_bearing = radian_bearing * (180 / 3.141592);
         }
 
@@ -151,14 +163,13 @@ public class Compass implements SensorEventListener {
     private void adjustImage() {
         long currenttime = System.currentTimeMillis();
 
-
         float direction_image = 0;
 //        270f
 //        float direction_image = bearingP1toP2(Office2, Office3);
-        if(src != null && dst != null){
+        if (src != null && dst != null) {
             Log.d(TAG, "src,dst isn't null");
             direction_image = bearingP1toP2(src, dst);
-        }else{
+        } else {
             Log.d(TAG, "src,dst is null");
             LatLng Office2 = new LatLng(37.483892, 126.972228);
             LatLng Office3 = new LatLng(37.484137, 126.973596);
@@ -176,7 +187,7 @@ public class Compass implements SensorEventListener {
         float end = azimuth + (float) fov_h / 2;
         end = (float) ((end + 360) % 360);
 
-        Log.d(TAG,"azimuth: " + azimuth +
+        Log.d(TAG, "azimuth: " + azimuth +
                 "\nstart:" + startX +
                 "\nend:" + end);
         //이미지 숨어있는 각
@@ -187,7 +198,7 @@ public class Compass implements SensorEventListener {
         float startY = azimuthY - (float) fov_v / 2;
         float endY = azimuthY + (float) fov_v / 2;
 
-        Log.d(TAG,"azimuthY: " + azimuthY +
+        Log.d(TAG, "azimuthY: " + azimuthY +
                 "\nstartY:" + startY +
                 "\nendY:" + endY);
 
@@ -195,32 +206,37 @@ public class Compass implements SensorEventListener {
 
         View view = mCameraLayout.findViewById(0);
 
-        Log.d(TAG,"width: " + mCameraLayout.getWidth() +
+        Log.d(TAG, "width: " + mCameraLayout.getWidth() +
                 " height: " + mCameraLayout.getHeight());
 
-        if (
-                startX - deltaX < direction_image && direction_image < end
-                        && startY - deltaY < direction_imageY && direction_imageY < endY
-                ) {
-            if (view == null){
+        if (startX - deltaX < direction_image && direction_image < end
+                && startY - deltaY < direction_imageY && direction_imageY < endY) {
+            if (view == null) {
                 Log.d(TAG, "adjust Image!!");
                 mCameraLayout.addView(PlaceMarker);
-            }else{
+                DistanceView.setText(PlaceName + "\n거리: " + (int) distance + "m");
+                DistanceView.setGravity(View.TEXT_ALIGNMENT_CENTER);
+                mCameraLayout.addView(DistanceView);
+            } else {
                 float a = direction_image - startX;
                 double b = Math.toDegrees(horizontal_fov);
-                float x = (float)((720 * a)/b);
+                float x = (float) ((720 * a) / b);
 
                 float aY = direction_imageY - startY;
                 double bY = Math.toDegrees(vertical_fov);
-                float y = (float) ((1118 * aY)/bY);
+                float y = (float) ((1118 * aY) / bY);
 
-                Log.d(TAG,"aY: " + aY + "\nbY: " + bY + "\ny: " + y);
+                Log.d(TAG, "aY: " + aY + "\nbY: " + bY + "\ny: " + y);
 
                 Log.d(TAG,
 //                        "X: " + x
                         "\nY: " + y
                 );
-                Animation move = new TranslateAnimation(movefrom,x,movefromY,y);
+                Animation move = new TranslateAnimation(movefrom, x, movefromY, y);
+
+                float dis = DistanceView.getWidth() / 2 - PlaceMarker.getWidth() / 2;
+                Log.d(TAG, "dis: " + dis);
+                Animation move2 = new TranslateAnimation(movefrom - dis, x - dis, movefromY + PlaceMarker.getHeight() + 10, y + PlaceMarker.getHeight() + 10);
 
 //                Animation move = new TranslateAnimation(360,360,movefromY,y);
                 move.setDuration(50);
@@ -228,6 +244,8 @@ public class Compass implements SensorEventListener {
                 move.setFillAfter(true);
 
                 PlaceMarker.startAnimation(move);
+                DistanceView.startAnimation(move2);
+
                 movefrom = x;
                 movefromY = y;
             }
@@ -238,6 +256,7 @@ public class Compass implements SensorEventListener {
 //            }else{
 //                Log.d(TAG, "view is null");
 //            }
+            DistanceView.setVisibility(View.INVISIBLE);
         }
 
         Log.d(TAG, "refresh time : " + (currenttime - pasttime) + "ms" +

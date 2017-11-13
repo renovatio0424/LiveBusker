@@ -8,18 +8,6 @@
     >
 
 
-    <ImageView
-        android:id="@+id/stream_img"
-        android:layout_width="100dp"
-        android:layout_height="100dp"
-        android:layout_margin="10dp"
-        android:layout_gravity="center"
-        android:background="@drawable/round_background"
-        android:padding="20dp"
-        app:srcCompat="@drawable/ic_photo_camera"
-        tools:layout_editor_absoluteX="203dp"
-        tools:layout_editor_absoluteY="276dp" />
-
     <EditText
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

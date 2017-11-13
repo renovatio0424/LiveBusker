@@ -29,7 +29,10 @@ public class PreviewCam1 implements SurfaceHolder.Callback {
     }
 
     public void surfaceCreated(SurfaceHolder holder) {
-        mCamera = openBackFacingCamera();
+        do {
+            mCamera = openBackFacingCamera();
+        }while (mCamera == null);
+
         mCamera.setDisplayOrientation(90);
         Camera.Parameters cameraParameter = mCamera.getParameters();
 
@@ -72,6 +75,11 @@ public class PreviewCam1 implements SurfaceHolder.Callback {
                 }
             }
         }
+
+        if(cam == null){
+            Log.d(TAG, "cam is null");
+        }
+
         return cam;
     }
 

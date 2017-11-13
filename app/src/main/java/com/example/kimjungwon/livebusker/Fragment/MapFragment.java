@@ -8,6 +8,7 @@ import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.location.Location;
 import android.location.LocationListener;
+import android.location.LocationManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -23,7 +24,10 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.TableRow;
+import android.widget.Toast;
 
 import com.example.kimjungwon.livebusker.Activity.ARActivity;
 import com.example.kimjungwon.livebusker.Network.PathService;
@@ -33,6 +37,7 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
@@ -66,7 +71,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
     private GoogleMap mMap;
     private TableRow find_path_row;
     Marker dst_marker;
-    LatLng src,dst;
+    LatLng src = new LatLng(37.483949, 126.973015), dst;
 
     @Nullable
     @Override
@@ -86,18 +91,25 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
             }
         });
 
-        Button AR_btn = rootview.findViewById(R.id.ar_btn);
+        ImageView AR_btn = rootview.findViewById(R.id.ar_btn);
         AR_btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent intent = new Intent(getContext(), ARActivity.class);
 
-                intent.putExtra("src_lat",src.latitude);
-                intent.putExtra("src_lng",src.longitude);
-                intent.putExtra("dst_lat",dst.latitude);
-                intent.putExtra("dst_lng",dst.longitude);
+                if (src != null && dst != null) {
+                    Intent intent = new Intent(getContext(), ARActivity.class);
 
-                startActivity(intent);
+                    intent.putExtra("place_name", dst_marker.getTitle());
+
+                    intent.putExtra("src_lat", src.latitude);
+                    intent.putExtra("src_lng", src.longitude);
+                    intent.putExtra("dst_lat", dst.latitude);
+                    intent.putExtra("dst_lng", dst.longitude);
+
+                    startActivity(intent);
+                } else {
+                    Toast.makeText(getContext(), "길찾기를 먼저 해주세요", Toast.LENGTH_SHORT).show();
+                }
             }
         });
         initMap(rootview);
@@ -146,7 +158,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
             protected void onPostExecute(String s) {
                 super.onPostExecute(s);
                 PathLine.clear();
-                if (beforeRoute != null){
+                if (beforeRoute != null) {
                     beforeRoute.remove();
                     Log.d(TAG, "before Route is remove");
                 }
@@ -168,6 +180,12 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
                             PathLine.add(new LatLng((double) coordinate.get(1), (double) coordinate.get(0)));
                             Log.d(TAG, "coordinate1: " + coordinate.get(0) + " coordinate2: " + coordinate.get(1));
 
+                        } else if (Type.equals("LineString")) {
+                            JSONArray linestring = (JSONArray) geometry.get("coordinates");
+                            for(int j = 0 ; j < linestring.length() ; j ++){
+                                JSONArray coordinate = (JSONArray) linestring.get(j);
+                                PathLine.add(new LatLng((double) coordinate.get(1), (double) coordinate.get(0)));
+                            }
                         }
                     }
 
@@ -279,27 +297,28 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
     public void onResume() {
         super.onResume();
     }
-//
-//    public void setGps() {
-//        final LocationManager lm = (LocationManager) getActivity().getSystemService(Context.LOCATION_SERVICE);
-//        if (ActivityCompat.checkSelfPermission(this.getContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
-//                ActivityCompat.checkSelfPermission(this.getContext(), Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-//            // TODO: Consider calling
-//            //    ActivityCompat#requestPermissions
-//            // here to request the missing permissions, and then overriding
-//            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-//            //                                          int[] grantResults)
-//            // to handle the case where the user grants the permission. See the documentation
-//            // for ActivityCompat#requestPermissions for more details.
-//            return;
-//        }
-//
-//        Log.d(TAG,"set GPS()");
+
+    //
+    public void setGps() {
+        final LocationManager lm = (LocationManager) getActivity().getSystemService(Context.LOCATION_SERVICE);
+        if (ActivityCompat.checkSelfPermission(this.getContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
+                ActivityCompat.checkSelfPermission(this.getContext(), Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            return;
+        }
+
+        Log.d(TAG, "set GPS()");
 //        lm.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, // 등록할 위치제공자
-//                1000, // 통지사이의 최소 시간간격 (miliSecond)
-//                1, // 통지사이의 최소 변경거리 (m)
+//                1000,   // 통지사이의 최소 시간간격 (miliSecond)
+//                1,      // 통지사이의 최소 변경거리 (m)
 //                mLocationListener);
-//    }
+    }
 //
 //    public void setMarkerPoint(double lng,double lnt){
 //        TMapPoint point = new TMapPoint(lnt,lng);
@@ -327,6 +346,15 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
             double longitude = location.getLongitude(); //경도
             double latitude = location.getLatitude();   //위도
 
+//            if(src == null){
+            src = new LatLng(latitude, longitude);
+            mMap.moveCamera(CameraUpdateFactory.newLatLng(src));
+//            }else{
+//                src.latitude = latitude;
+//                src.longitude = longitude;
+//            }
+
+
 //            tMapView.setCenterPoint(longitude, latitude);
 //            setMarkerPoint(longitude,latitude);
         }
@@ -346,6 +374,8 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
 
         }
     };
+
+    Marker last_marker;
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
@@ -370,23 +400,34 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
         setMarkerOption(Office3, "3사무실", null);
         setMarkerOption(Office5, "5사무실", null);
 
+        setMarkerOption(src, "현재 위치", null);
+
 
         mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
             @Override
             public boolean onMarkerClick(Marker marker) {
+                marker.setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ROSE));
+
+                if(last_marker != null){
+                    last_marker.setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_CYAN));
+                }
+
+                last_marker = marker;
                 mBottomSheetBehavior.setState(BottomSheetBehavior.STATE_EXPANDED);
-                dst = new LatLng(marker.getPosition().latitude,marker.getPosition().longitude);
+                dst = new LatLng(marker.getPosition().latitude, marker.getPosition().longitude);
+                dst_marker = marker;
                 return false;
             }
         });
 
+//        mMap.setOnMyLocationChangeListener(new GoogleMap.OnMyLocationChangeListener() {
+//            @Override
+//            public void onMyLocationChange(Location location) {
+//                src = new LatLng(location.getLatitude(), location.getLongitude());
+//            }
+//        });
 
-        mMap.setOnMyLocationChangeListener(new GoogleMap.OnMyLocationChangeListener() {
-            @Override
-            public void onMyLocationChange(Location location) {
-                src = new LatLng(location.getLatitude(), location.getLongitude());
-            }
-        });
+        setGps();
 
         if (ActivityCompat.checkSelfPermission(this.getContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this.getContext(), Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             // TODO: Consider calling
@@ -398,16 +439,20 @@ public class MapFragment extends Fragment implements OnMapReadyCallback {
             // for ActivityCompat#requestPermissions for more details.
             return;
         }
-        mMap.setMyLocationEnabled(true);
-        mMap.getUiSettings().setMyLocationButtonEnabled(true);
-//        mMap.moveCamera(CameraUpdateFactory.newLatLng(src));
-        mMap.animateCamera(CameraUpdateFactory.zoomTo(15));
+//        mMap.setMyLocationEnabled(true);
+//        mMap.getUiSettings().setMyLocationButtonEnabled(true);
+        if (src != null)
+            mMap.moveCamera(CameraUpdateFactory.newLatLng(src));
+        else
+            Toast.makeText(getContext(), "src is null!!", Toast.LENGTH_SHORT).show();
+        mMap.animateCamera(CameraUpdateFactory.zoomTo(17));
     }
 
     public void setMarkerOption(LatLng latLng, String title, @Nullable String snippet) {
         MarkerOptions markerOptions = new MarkerOptions();
         markerOptions.position(latLng);
         markerOptions.title(title);
+        markerOptions.icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_CYAN));
         if (snippet != null)
             markerOptions.snippet(snippet);
         mMap.addMarker(markerOptions);

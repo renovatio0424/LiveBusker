@@ -24,7 +24,10 @@ import android.os.Message;
 import android.support.annotation.NonNull;
 import android.support.annotation.RequiresApi;
 import android.support.v13.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.util.SparseArray;
 import android.view.Display;
@@ -45,17 +48,16 @@ import android.widget.Toast;
 
 import com.afollestad.materialdialogs.DialogAction;
 import com.afollestad.materialdialogs.MaterialDialog;
+import com.example.kimjungwon.livebusker.Adapter.Chat_Adapter;
+import com.example.kimjungwon.livebusker.CustomClass.Chat;
 import com.example.kimjungwon.livebusker.Netty.ChatInitializer;
 import com.example.kimjungwon.livebusker.Network.PHPRequest;
 import com.example.kimjungwon.livebusker.R;
-import com.google.android.gms.vision.CameraSource;
 import com.google.android.gms.vision.Frame;
 import com.google.android.gms.vision.face.Face;
 import com.google.android.gms.vision.face.FaceDetector;
 import com.google.android.gms.vision.face.Landmark;
-import com.google.android.gms.vision.face.LargestFaceFocusingProcessor;
 import com.tzutalin.dlib.FaceDet;
-import com.tzutalin.dlib.VisionDetRet;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -76,6 +78,7 @@ import java.sql.Date;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.StringTokenizer;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
@@ -108,13 +111,14 @@ import static com.example.kimjungwon.livebusker.Config.URL.Server_IP;
 /**
  * Created by kimjungwon on 2017-09-06.
  */
-@RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+//@RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
 public class StreamingActivity extends AppCompatActivity implements RESConnectionListener
         , TextureView.SurfaceTextureListener
         , RESVideoChangeListener, View.OnClickListener, SurfaceTexture.OnFrameAvailableListener {
     private static final String TAG = "StreamingActivity";
     protected RESClient resClient;
     protected AspectTextureView camera_preview;
+    FaceDetector faceDetector;
 
     //    protected SeekBar sb_zoom;
     protected TextView tv_speed;
@@ -145,10 +149,15 @@ public class StreamingActivity extends AppCompatActivity implements RESConnectio
     ChannelFuture channelFuture;
     String name;
 
-    TextView et_scroll;
+    //    TextView et_scroll;
+    RecyclerView et_scroll;
+    ArrayList<Chat> ChatList;
+    Chat_Adapter chat_adapter;
+
     EditText et_msg;
     Button btn_send;
     RelativeLayout chat_layout, broadcast_layout;
+
 
     static {
         System.loadLibrary("opencv_java3");
@@ -257,8 +266,21 @@ public class StreamingActivity extends AppCompatActivity implements RESConnectio
 //
 //                    channel.writeAndFlush(em);
                     break;
+                //receive message
                 case 0x01:
-                    et_scroll.setText(et_scroll.getText() + m + "\r\n");
+//                    et_scroll.setText(et_scroll.getText() + m + "\r\n");
+                    Log.d("chat", "receive msg: " + m);
+
+                    try {
+                        JSONObject cht = new JSONObject(m);
+                        ChatList.add(new Chat(cht.getString("name"), cht.getString("msg")));
+                        chat_adapter.notifyDataSetChanged();
+
+
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+
                     break;
                 case 0x02:
                     //send complete
@@ -269,13 +291,16 @@ public class StreamingActivity extends AppCompatActivity implements RESConnectio
                     String et_m = et_msg.getText().toString();
                     if (et_m.length() == 0)
                         return;
-                    String mmm = String.valueOf("[User " + name + "] " + et_m + "");
+                    String mmm = String.valueOf("User " + name + "| " + et_m + "");
 
                     JSONObject jsonObject = new JSONObject();
                     try {
                         jsonObject.put("Type", "2");
                         jsonObject.put("Streamkey", stream_key);
-                        jsonObject.put("Message", mmm);
+                        JSONObject cht = new JSONObject();
+                        cht.put("name", "User " + name);
+                        cht.put("msg", et_m);
+                        jsonObject.put("Message", cht.toString());
                     } catch (JSONException e) {
                         e.printStackTrace();
                     }
@@ -299,7 +324,14 @@ public class StreamingActivity extends AppCompatActivity implements RESConnectio
                             handler.obtainMessage(0x02).sendToTarget();
                         }
                     });
-                    Log.d("Main", "send Msg");
+                    Log.d("chat", "send msg: " + mmm);
+//                    //리사이클러뷰에 추가
+//                    ChatList.add(new Chat("ㅎㅇㅇ",mmm));
+////                    chat_adapter.Chats.add(new Chat("ㅎㅇㅇ",mmm));
+//                    chat_adapter = new Chat_Adapter(ChatList,getApplicationContext());
+//                    et_scroll.setAdapter(chat_adapter);
+//                    chat_adapter.notifyDataSetChanged();
+//                    et_scroll.notify();
                     break;
                 case 0x04:
                     //채팅 방 퇴장
@@ -478,6 +510,7 @@ public class StreamingActivity extends AppCompatActivity implements RESConnectio
                 .customView(R.layout.dialog_stream, true)
                 .autoDismiss(false)
                 .cancelable(false)
+                .title("방송 제목을 입력해주세요!")
 //                .contentColorRes(R.color.White)
                 .backgroundColorRes(R.color.White)
                 .positiveColorRes(R.color.colorPrimary)
@@ -565,7 +598,6 @@ public class StreamingActivity extends AppCompatActivity implements RESConnectio
 
         bp2 = BitmapFactory.decodeResource(getResources(), R.drawable.mask);
 
-
         faceDetector =
                 new FaceDetector.Builder(getApplicationContext())
                         .setProminentFaceOnly(true)
@@ -575,13 +607,23 @@ public class StreamingActivity extends AppCompatActivity implements RESConnectio
                         .setLandmarkType(FaceDetector.ALL_LANDMARKS)
                         .build();
 
-
         Mask_btn = (ImageView) findViewById(R.id.mask_btn);
         Mask_btn.setOnClickListener(this);
+
+        Log.d("chat", "chat setting(oncreate)");
+        ChatList = new ArrayList<>();
+        ChatList.add(new Chat("공지", "채팅방에 입장하셨습니다"));
+        chat_adapter = new Chat_Adapter(ChatList, getApplicationContext());
+        et_scroll.setAdapter(chat_adapter);
+        chat_adapter.notifyDataSetChanged();
+        et_scroll.setLayoutManager(new LinearLayoutManager(getApplicationContext()));
+
+        Log.d("chat", "set adapter");
     }
 
     private void initView() {
-        et_scroll = (TextView) findViewById(R.id.Chatview);
+//        et_scroll = (TextView) findViewById(R.id.Chatview);
+        et_scroll = (RecyclerView) findViewById(R.id.Chatview);
 
         chat_layout = (RelativeLayout) findViewById(R.id.chat_layout);
         broadcast_layout = (RelativeLayout) findViewById(R.id.broadcast_layout);
@@ -602,6 +644,9 @@ public class StreamingActivity extends AppCompatActivity implements RESConnectio
 
         et_msg = (EditText) findViewById(R.id.msg_et_stream);
         btn_send = (Button) findViewById(R.id.send_btn_stream);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+            btn_send.setBackground(ContextCompat.getDrawable(getApplicationContext(),R.drawable.round_button));
+        }
 
         btn_send.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -823,7 +868,6 @@ public class StreamingActivity extends AppCompatActivity implements RESConnectio
     }
 
     private int mFrameNum = 0;
-    FaceDetector faceDetector;
 
     public Bitmap resizedBitmap(Bitmap bm, int newWidth, int newHeight) {
         int width = bm.getWidth();
@@ -853,7 +897,6 @@ public class StreamingActivity extends AppCompatActivity implements RESConnectio
 
     public void setFaceDetect() {
         faceDet = new FaceDet(com.tzutalin.dlib.Constants.getFaceShapeModelPath());
-
     }
 
     FaceDet faceDet;
@@ -893,6 +936,12 @@ public class StreamingActivity extends AppCompatActivity implements RESConnectio
 //                canvas.drawText(String.valueOf(i),posX,posY,mFaceLandmarkPaint);
 //            }
 //        }
+        Log.d(TAG, "faces size: " + faces.size());
+        //얼굴 인식을 못했을 경우
+        if (faces.size() == 0) {
+            return null;
+        }
+
         setCanvas();
 
         Bitmap Bunny_nose = null;
@@ -985,6 +1034,12 @@ public class StreamingActivity extends AppCompatActivity implements RESConnectio
         Frame frame = new Frame.Builder().setBitmap(resizeFace).build();
         SparseArray<Face> faces = faceDetector.detect(frame);
 
+        Log.d(TAG, "faces size: " + faces.size());
+        //얼굴 인식을 못했을 경우
+        if (faces.size() == 0) {
+            return null;
+        }
+
         setCanvas();
 
         Bitmap Maskbp = Bitmap.createBitmap(faceBitmap.getWidth(), faceBitmap.getHeight(), Bitmap.Config.ARGB_8888);
@@ -1031,6 +1086,8 @@ public class StreamingActivity extends AppCompatActivity implements RESConnectio
     }
 
     private Bitmap SetSunglass(Bitmap faceBitmap) {
+        Log.d(TAG, "set sunglass");
+
         float resizeRatioWidth = 200 / ((float) faceBitmap.getWidth());
         float resizeRatioHeight = 200 / ((float) faceBitmap.getHeight());
 
@@ -1038,6 +1095,12 @@ public class StreamingActivity extends AppCompatActivity implements RESConnectio
 
         Frame frame = new Frame.Builder().setBitmap(resizeFace).build();
         SparseArray<Face> faces = faceDetector.detect(frame);
+
+        Log.d(TAG, "faces size: " + faces.size());
+        //얼굴 인식을 못했을 경우
+        if (faces.size() == 0) {
+            return null;
+        }
 
         setCanvas();
 
@@ -1079,13 +1142,12 @@ public class StreamingActivity extends AppCompatActivity implements RESConnectio
                 int posY = (int) (pos.y / (resizeRatioHeight * 1.7));
 
 //                안경 높이 설정
-                if(landmark.getType() == Landmark.LEFT_EYE){
-                    sunglassRect.top = (int) (posY - FaceHeight/6);
-                    sunglassRect.bottom = (int) (posY + FaceHeight/6);
-
-                }else if(landmark.getType() == Landmark.RIGHT_EYE){
-                    sunglassRect.top = (int) (posY - FaceHeight/6);
-                    sunglassRect.bottom = (int) (posY + FaceHeight/6);
+                if (landmark.getType() == Landmark.LEFT_EYE) {
+                    sunglassRect.top = (int) (posY - FaceHeight / 6);
+                    sunglassRect.bottom = (int) (posY + FaceHeight / 6);
+                } else if (landmark.getType() == Landmark.RIGHT_EYE) {
+                    sunglassRect.top = (int) (posY - FaceHeight / 6);
+                    sunglassRect.bottom = (int) (posY + FaceHeight / 6);
                 }
                 Log.d(TAG, "landmark (" + j + ") \nx: " + pos.x + " y: " + pos.y);
             }
@@ -1103,23 +1165,34 @@ public class StreamingActivity extends AppCompatActivity implements RESConnectio
 
 //        Bitmap Maskbp = SetBunnyMask(faceBP);
         Bitmap Maskbp = null;
-        if(MaskType_NOMASK){
+        if (MaskType_NOMASK) {
+            Log.d(TAG, "no mask");
             Maskbp = null;
-        }else if(MaskType_BUNNYMASK){
+
+            resClient.setHardVideoFilter(null);
+        } else if (MaskType_BUNNYMASK) {
             Maskbp = SetBunnyMask(faceBP);
-            IconHardFilter filter = (IconHardFilter) resClient.acquireHardVideoFilter();
-            filter.updateIcon(Maskbp, new Rect(0, 0, faceBP.getWidth(), faceBP.getHeight()));
-            resClient.releaseHardVideoFilter();
-        }else if(MaskType_SUNGLASS){
+            if (Maskbp != null) {
+                IconHardFilter filter = (IconHardFilter) resClient.acquireHardVideoFilter();
+                filter.updateIcon(Maskbp, new Rect(0, 0, faceBP.getWidth(), faceBP.getHeight()));
+                resClient.releaseHardVideoFilter();
+            }
+        } else if (MaskType_SUNGLASS) {
             Maskbp = SetSunglass(faceBP);
-            IconHardFilter filter = (IconHardFilter) resClient.acquireHardVideoFilter();
-            filter.updateIcon(Maskbp, new Rect(0, 0, faceBP.getWidth(), faceBP.getHeight()));
-            resClient.releaseHardVideoFilter();
-        }else if(MaskType_LANDMARK){
+            if (Maskbp != null) {
+                IconHardFilter filter = (IconHardFilter) resClient.acquireHardVideoFilter();
+                filter.updateIcon(Maskbp, new Rect(0, 0, faceBP.getWidth(), faceBP.getHeight()));
+                resClient.releaseHardVideoFilter();
+            }
+        } else if (MaskType_LANDMARK) {
             Maskbp = setDetectMask(faceBP);
-            IconHardFilter filter = (IconHardFilter) resClient.acquireHardVideoFilter();
-            filter.updateIcon(Maskbp, new Rect(0, 0, faceBP.getWidth(), faceBP.getHeight()));
-            resClient.releaseHardVideoFilter();
+            if (Maskbp != null) {
+                IconHardFilter filter = (IconHardFilter) resClient.acquireHardVideoFilter();
+                filter.updateIcon(Maskbp, new Rect(0, 0, faceBP.getWidth(), faceBP.getHeight()));
+                resClient.releaseHardVideoFilter();
+            }
+        } else {
+            Log.d(TAG, "else ");
         }
 
 
@@ -1370,8 +1443,6 @@ public class StreamingActivity extends AppCompatActivity implements RESConnectio
 //            resClient.releaseHardVideoFilter();
 //    }
     }
-
-
 
 
     @Override
